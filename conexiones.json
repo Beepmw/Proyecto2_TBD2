@@ -1,0 +1,44 @@
+[
+  {
+    "ruta": "C:/Users/tomea/OneDrive/Documentos/PROYECTOtbd/proyecto.ib",
+    "pass": "masterkey",
+    "host": "localhost",
+    "nombre": "prueba",
+    "user": "sysdba"
+  },
+  {
+    "ruta": "C:/Users/tomea/OneDrive/Documentos/PROYECTOtbd/proyecto.ib",
+    "pass": "masterkey",
+    "host": "localhost",
+    "nombre": "probando",
+    "user": "sysdba"
+  },
+  {
+    "ruta": "C:/Users/tomea/OneDrive/Documentos/docu.ib",
+    "pass": "123",
+    "host": "localhost",
+    "nombre": "docu",
+    "user": "nicole"
+  },
+  {
+    "ruta": "C:/Users/tomea/OneDrive/Documentos/PROYECTOtbd/proyecto.ib",
+    "pass": "masterkey",
+    "host": "localhost",
+    "nombre": "prueba",
+    "user": "sysdba"
+  },
+  {
+    "ruta": "C:/Users/tomea/OneDrive/Documentos/PROYECTOtbd/proyecto.ib",
+    "pass": "masterkey",
+    "host": "localhost",
+    "nombre": "proyecto",
+    "user": "sysdba"
+  },
+  {
+    "ruta": "C:/Users/tomea/OneDrive/Documentos/PROYECTOtbd/proyecto.ib",
+    "pass": "masterkey",
+    "host": "localhost",
+    "nombre": "test",
+    "user": "sysdba"
+  }
+]
