@@ -33,12 +33,6 @@
     "host": "localhost",
     "nombre": "proyecto",
     "user": "sysdba"
-  },
-  {
-    "ruta": "C:/Users/tomea/OneDrive/Documentos/PROYECTOtbd/proyecto.ib",
-    "pass": "masterkey",
-    "host": "localhost",
-    "nombre": "test",
-    "user": "sysdba"
   }
+
 ]

@@ -11,7 +11,9 @@
             <file>file:/C:/Users/tomea/OneDrive/Documentos/NetBeansProjects/Database_Manager_Interbase/src/database_manager_interbase/Config.java</file>
             <file>file:/C:/Users/tomea/OneDrive/Documentos/NetBeansProjects/Database_Manager_Interbase/src/database_manager_interbase/ConexionMng.java</file>
             <file>file:/C:/Users/tomea/OneDrive/Documentos/NetBeansProjects/Database_Manager_Interbase/src/View/createTV.java</file>
-            <file>file:/C:/Users/tomea/OneDrive/Documentos/NetBeansProjects/Database_Manager_Interbase/src/database_manager_interbase/sincronizar.java</file>
+            <file>file:/C:/Users/tomea/OneDrive/Documentos/NetBeansProjects/Database_Manager_Interbase/src/database_manager_interbase/ConexionPG.java</file>
+            <file>file:/C:/Users/tomea/OneDrive/Documentos/NetBeansProjects/Database_Manager_Interbase/src/View/sincronizar.java</file>
+            <file>file:/C:/Users/tomea/OneDrive/Documentos/NetBeansProjects/Database_Manager_Interbase/src/View/Postgres.java</file>
         </group>
     </open-files>
 </project-private>
