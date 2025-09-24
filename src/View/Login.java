@@ -337,7 +337,8 @@ public class Login extends javax.swing.JFrame {
             case 12:
                 return "DATE";
             case 14:
-                return "CHAR";
+                int prec = (precision <1) ? 255:precision;
+                return "CHAR (" + prec + ")";
             case 16:
                 if (scale == 0) {
                     return "BIGINT";
@@ -349,7 +350,8 @@ public class Login extends javax.swing.JFrame {
             case 35:
                 return "TIMESTAMP";
             case 37:
-                return "VARCHAR(" + precision + ")";
+                int precc = (precision <1) ? 255:precision;
+                return "VARCHAR(" + precc + ")";
             case 261:
                 if (subTipo == 1) {
                     return "BLOB SUB_TYPE TEXT";
@@ -392,7 +394,7 @@ public class Login extends javax.swing.JFrame {
     private void ejecutarSQL() throws SQLException {
         TreePath path = jTree1.getSelectionPath();
         if (path == null || path.getPathCount() < 2) {
-            JOptionPane.showMessageDialog(this, "Selecciona una conexión en el arbol");
+            JOptionPane.showMessageDialog(this, "Selecciona una conexioooon en el arbol");
             return;
         }
 
@@ -415,6 +417,7 @@ public class Login extends javax.swing.JFrame {
         conexion = conexionNueva;
         Connection con = (Connection) conexion.getConnection();
         String sql = txtQuery.getText().trim();
+        System.out.println("SQL ejecutado: " + sql);
 
         if (sql.isEmpty()) {
             return;

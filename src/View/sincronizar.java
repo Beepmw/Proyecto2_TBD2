@@ -40,7 +40,8 @@ public class sincronizar {
             case 35:
                 return "TIMESTAMP";
             case 37:
-                return "VARCHAR(" + precision + ")";
+                int prec = (precision < 1) ? 255 :precision;
+                return "VARCHAR(" + prec + ")";
             case 261:
                 return "BYTEA";
             default:

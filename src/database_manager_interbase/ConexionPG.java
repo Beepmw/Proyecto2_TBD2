@@ -20,7 +20,7 @@ public class ConexionPG {
     public boolean conectarPG (String host, String db, String user, String contra){
         try{
             Class.forName("org.postgresql.Driver");
-            String url = "jdbc:postgresql://" + host + "/" + db;
+            String url = "jdbc:postgresql://" + host + ":5432/" + db;
             conn = DriverManager.getConnection(url,user,contra);
             return true;
         }catch(Exception e){
@@ -29,8 +29,8 @@ public class ConexionPG {
         }
     }
     
-    public ConexionPG getConnection(){
-        return (ConexionPG) conn;
+    public Connection getConnection(){
+        return conn;
     }
     
     
