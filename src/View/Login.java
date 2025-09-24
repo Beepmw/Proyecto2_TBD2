@@ -494,15 +494,17 @@ public class Login extends javax.swing.JFrame {
         if (nodo.getParent() != null && nodo.getParent().toString().equalsIgnoreCase("Bases de Datos")) {
             JMenuItem genDiagramDB = new JMenuItem("Generar Diagrama de Toda la Base");
             JMenuItem sync = new JMenuItem("Sincronizar con postgres ");
-
             String databaseName = nodo.getUserObject().toString();
+     
             genDiagramDB.addActionListener(e -> verDiagrama(databaseName, null));
+            
             sync.addActionListener(e -> {
-                try {
-                    sincronizarBD(databaseName);
-                } catch (SQLException ex) {
-                    Logger.getLogger(Login.class.getName()).log(Level.SEVERE, null, ex);
-                }
+                
+                    Postgres pg = new Postgres(this,databaseName);
+                    //sincronizarBD(databaseName);
+                    pg.setVisible(true);
+                
+                
             });
 
             submenu.add(genDiagramDB);
@@ -847,7 +849,6 @@ public class Login extends javax.swing.JFrame {
     }
     
     private void sincronizarBD(String nombreConexionInterbase) throws SQLException {
-    // Aquí puedes pedir datos de conexión a Postgres. Para el ejemplo, los pongo fijos:
     String hostPG = "localhost";
     String dbPG = "postgres";
     String userPG = "postgres";
@@ -863,9 +864,8 @@ public class Login extends javax.swing.JFrame {
     sincronizar sync = new sincronizar(interbase.getConnection(), (java.sql.Connection) postgres.getConnection());
 
     try {
-        // Sincroniza tablas y relaciones
-        sync.syncTblRel(); // Este método debe manejar alta, baja, modificación de datos
-        // Sincroniza vistas
+
+        sync.syncTblRel(); 
         //sync.syncAllViews();
         JOptionPane.showMessageDialog(this, "Sincronización completada para " + nombreConexionInterbase + ".");
     } catch (Exception ex) {

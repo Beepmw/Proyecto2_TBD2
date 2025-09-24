@@ -174,14 +174,12 @@ public class Postgres extends javax.swing.JFrame {
                 }
                 java.sql.Connection interbaseConn = interbase.getConnection();
                 
-                // 2. Crear la conexión a Postgres
                 ConexionPG postgres = new ConexionPG();
                 if (!postgres.conectarPG(hostPG, dbPG, userPG, passPG)) {
                     JOptionPane.showMessageDialog(this, "No se pudo conectar a PostgreSQL.");
                     return;
                 }
-                
-                // 3. Sincronizar usando Sincronizacion
+
                 sincronizar sync = new sincronizar(interbaseConn, (java.sql.Connection) postgres.getConnection());
                 try {
                     sync.syncTblRel();
