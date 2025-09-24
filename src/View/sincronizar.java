@@ -65,7 +65,8 @@ public class sincronizar {
     }
 
      public void syncTodo(String tableName) throws SQLException {
-        PreparedStatement psCols = IBconn.prepareStatement("SELECT rf.RDB$FIELD_NAME, f.RDB$FIELD_TYPE, f.RDB$FIELD_SUB_TYPE, f.RDB$FIELD_PRECISION, f.RDB$FIELD_SCALE, rf.RDB$NULL_FLAG " +
+        PreparedStatement psCols = IBconn.prepareStatement("SELECT rf.RDB$FIELD_NAME, f.RDB$FIELD_TYPE, f.RDB$FIELD_SUB_TYPE, f.RDB$FIELD_PRECISION, "
+                + "f.RDB$FIELD_SCALE, rf.RDB$NULL_FLAG " +
             "FROM RDB$RELATION_FIELDS rf JOIN RDB$FIELDS f ON rf.RDB$FIELD_SOURCE=f.RDB$FIELD_NAME "
                 + "WHERE rf.RDB$RELATION_NAME=? ORDER BY rf.RDB$FIELD_POSITION");
         psCols.setString(1, tableName);
