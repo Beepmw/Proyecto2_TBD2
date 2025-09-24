@@ -32,9 +32,19 @@ import javax.swing.JPopupMenu;
 import com.mxgraph.swing.mxGraphComponent;
 import com.mxgraph.view.mxGraph;
 import com.mxgraph.layout.hierarchical.mxHierarchicalLayout;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JPasswordField;
+import javax.swing.JProgressBar;
+import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.SwingWorker;
 
 /**
  *
@@ -482,21 +492,33 @@ public class Login extends javax.swing.JFrame {
         submenu = new JPopupMenu();
 
         if (nodo.getParent() != null && nodo.getParent().toString().equalsIgnoreCase("Bases de Datos")) {
-            JMenuItem exportPg = new JMenuItem("Exportar a PostgreSQL");
+            //JMenuItem exportPg = new JMenuItem("Exportar a PostgreSQL");
             // exportPg.addActionListener(e -> exportToPostgres());
             JMenuItem genDiagramDB = new JMenuItem("Generar Diagrama de Toda la Base");
-            String databaseName = nodo.getUserObject().toString();
-            genDiagramDB.addActionListener(e -> mostrarDiagramaJGraph(databaseName)); // toda la base
-            submenu.add(exportPg);
-            submenu.add(genDiagramDB);
 
-        } else if (nodo.getUserObject().toString().equalsIgnoreCase("Tablas") || nodo.getUserObject().toString().equalsIgnoreCase("Vistas")) {
-            JMenuItem genDiagramAllTables = new JMenuItem("Generar Diagrama de Todas las Tablas");
+            
+            JMenuItem sync = new JMenuItem("Sincronizar con postgres ");
+
+            String databaseName = nodo.getUserObject().toString();
+            genDiagramDB.addActionListener(e -> verDiagrama(databaseName, null));
+            //sync.addActionListener(e -> iniciarSincronizacionPostgres(databaseName));
+
+            //submenu.add(exportPg);
+            submenu.add(genDiagramDB);
+            //submenu.add(sync);  
+        }
+
+    
+
+    else if (nodo.getUserObject () .toString().equalsIgnoreCase("Tablas") || nodo.getUserObject().toString().equalsIgnoreCase("Vistas")
+        
+            ) {
+            JMenuItem genDiagramAllTables = new JMenuItem("Ver Diagrama");
             String databaseName = ((DefaultMutableTreeNode) nodo.getParent()).getUserObject().toString();
-            genDiagramAllTables.addActionListener(e -> mostrarDiagramaJGraph(databaseName));
+            genDiagramAllTables.addActionListener(e -> verDiagrama(databaseName, null));
             submenu.add(genDiagramAllTables);
 
-        } else if (nodo.getParent() != null
+        }else if (nodo.getParent() != null
                 && (nodo.getParent().toString().equalsIgnoreCase("Tablas") || nodo.getParent().toString().equalsIgnoreCase("Vistas"))) {
 
             String tableName = nodo.getUserObject().toString();
@@ -513,7 +535,7 @@ public class Login extends javax.swing.JFrame {
                 }
             });
             JMenuItem createDiagram = new JMenuItem("Ver Diagrama");
-            createDiagram.addActionListener(e -> mostrarDiagramaJGraph(dbName));
+            createDiagram.addActionListener(e -> verDiagrama(dbName, tableName));
 
             JMenuItem viewData = new JMenuItem("Ver Data");
             viewData.addActionListener(e -> mostrarData(dbName, tableName));
@@ -558,155 +580,12 @@ public class Login extends javax.swing.JFrame {
         return ddl.toString();
     }
 
-    
-
     private String seleccionarConexion() {
         TreePath path = jTree1.getSelectionPath();
         if (path != null && path.getPathCount() > 1) {
             return path.getPathComponent(1).toString();
         }
         return null;
-    }
-
-    private void mostrarDiagramaBD(String databaseName) {
-        try {
-            if (frameDiagrama != null) {
-                frameDiagrama.dispose();
-            }
-            frameDiagrama = new JFrame("Diagrama ER de la Base: " + databaseName);
-            frameDiagrama.setSize(600, 400);
-
-            panelDiag = new JPanel() {
-                @Override
-                protected void paintComponent(Graphics g) {
-                    super.paintComponent(g);
-                    try {
-                        ConexionIB conexionIB = gestor.getConexion(databaseName);
-                        Connection con = (Connection) conexionIB.getConnection();
-                        Statement stmt = (Statement) con.createStatement();
-                        ResultSet rsTables = (ResultSet) stmt.executeQuery(
-                                "SELECT RDB$RELATION_NAME FROM RDB$RELATIONS WHERE RDB$VIEW_BLR IS NULL AND RDB$SYSTEM_FLAG = 0");
-
-                        int x = 20, y = 20;
-                        while (rsTables.next()) {
-                            String table = rsTables.getString("RDB$RELATION_NAME").trim();
-                            g.drawRect(x, y, 200, 20);
-                            g.drawString(table, x + 5, y + 15);
-                            y += 30;
-
-                            PreparedStatement ps = (PreparedStatement) con.prepareStatement(
-                                    "SELECT rf.RDB$FIELD_NAME FROM RDB$RELATION_FIELDS rf "
-                                    + "WHERE rf.RDB$RELATION_NAME=? ORDER BY rf.RDB$FIELD_POSITION");
-                            ps.setString(1, table);
-                            ResultSet rsCols = (ResultSet) ps.executeQuery();
-                            int colY = y;
-                            while (rsCols.next()) {
-                                String col = rsCols.getString("RDB$FIELD_NAME").trim();
-                                g.drawString(col, x + 20, colY);
-                                colY += 15;
-                            }
-                            y = colY + 20;
-                            rsCols.close();
-                            ps.close();
-                        }
-                        rsTables.close();
-                        ResultSet rsViews = (ResultSet) stmt.executeQuery(
-                                "SELECT RDB$RELATION_NAME FROM RDB$RELATIONS WHERE RDB$VIEW_BLR IS NOT NULL AND RDB$SYSTEM_FLAG = 0");
-                        y += 20;
-                        g.drawString("VISTAS:", x, y);
-                        y += 20;
-
-                        while (rsViews.next()) {
-                            String view = rsViews.getString("RDB$RELATION_NAME").trim();
-                            g.drawRect(x, y, 200, 20);
-                            g.drawString(view, x + 5, y + 15);
-                            y += 30;
-                            PreparedStatement ps = (PreparedStatement) con.prepareStatement(
-                                    "SELECT rf.RDB$FIELD_NAME FROM RDB$RELATION_FIELDS rf "
-                                    + "WHERE rf.RDB$RELATION_NAME=? ORDER BY rf.RDB$FIELD_POSITION");
-                            ps.setString(1, view);
-                            ResultSet rsCols = (ResultSet) ps.executeQuery();
-                            int colY = y;
-                            while (rsCols.next()) {
-                                String col = rsCols.getString("RDB$FIELD_NAME").trim();
-                                g.drawString(col, x + 20, colY);
-                                colY += 15;
-                            }
-                            y = colY + 20;
-                            rsCols.close();
-                            ps.close();
-                        }
-                        rsViews.close();
-
-                        stmt.close();
-                    } catch (SQLException ex) {
-                        g.drawString("Error: " + ex.getMessage(), 20, 50);
-                    }
-                }
-            };
-
-            frameDiagrama.add(new JScrollPane(panelDiag));
-            frameDiagrama.setVisible(true);
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error al generar diagrama: " + ex.getMessage());
-        }
-    }
-
-    private void mostrarDiagramaJGraph(String dbName) {
-        try {
-            ConexionIB conexionIB = gestor.getConexion(dbName);
-            Connection con = (Connection) conexionIB.getConnection();
-            mxGraph graph = new mxGraph();
-            Object parent = graph.getDefaultParent();
-            graph.getModel().beginUpdate();
-            try {
-                Map<String, Object> tablaNodos = new HashMap<>();
-                Statement st = (Statement) con.createStatement();
-                ResultSet rsTablas = (ResultSet) st.executeQuery("SELECT RDB$RELATION_NAME, RDB$VIEW_BLR " + "FROM RDB$RELATIONS WHERE RDB$SYSTEM_FLAG=0 ORDER BY RDB$RELATION_NAME");
-                int x = 20, y = 20;
-                while (rsTablas.next()) {
-                    String tabla = rsTablas.getString("RDB$RELATION_NAME").trim();
-                    String tipo = (rsTablas.getObject("RDB$VIEW_BLR") == null) ? "Tabla" : "Vista";
-                    String label = tabla + " (" + tipo + ")";
-                    Object nodo = graph.insertVertex(parent, null, label, x, y, 160, 50, "shape=rectangle;perimeter=rectanglePerimeter;fillColor=#C3D9FF");
-                    tablaNodos.put(tabla, nodo);
-                    y += 80;
-                }
-                rsTablas.close();
-                ResultSet rsFK = (ResultSet) st.executeQuery("SELECT rc.RDB$RELATION_NAME AS TABLA_ORIGEN, rc2.RDB$RELATION_NAME AS TABLA_REF, " + "rf.RDB$FIELD_NAME AS CAMPO_ORIGEN, rf2.RDB$FIELD_NAME AS CAMPO_REF " + "FROM RDB$RELATION_CONSTRAINTS rc " + "JOIN RDB$REF_CONSTRAINTS rfc ON rc.RDB$CONSTRAINT_NAME = rfc.RDB$CONSTRAINT_NAME " + "JOIN RDB$RELATION_CONSTRAINTS rc2 ON rfc.RDB$CONST_NAME_UQ = rc2.RDB$CONSTRAINT_NAME " + "JOIN RDB$INDEX_SEGMENTS rf ON rf.RDB$INDEX_NAME = rc.RDB$INDEX_NAME " + "JOIN RDB$INDEX_SEGMENTS rf2 ON rf2.RDB$INDEX_NAME = rc2.RDB$INDEX_NAME " + "WHERE rc.RDB$CONSTRAINT_TYPE='FOREIGN KEY'");
-                while (rsFK.next()) {
-                    String origen = rsFK.getString("TABLA_ORIGEN").trim();
-                    String destino = rsFK.getString("TABLA_REF").trim();
-                    String campoOrigen = rsFK.getString("CAMPO_ORIGEN").trim();
-                    String campoRef = rsFK.getString("CAMPO_REF").trim();
-                    Object nodoOrigen = tablaNodos.get(origen);
-                    Object nodoDestino = tablaNodos.get(destino);
-                    if (nodoOrigen != null && nodoDestino != null) {
-                        graph.insertEdge(parent, null, campoOrigen + " → " + campoRef, nodoOrigen, nodoDestino, "strokeColor=black;endArrow=block;endFill=1");
-                    }
-                }
-                rsFK.close();
-                st.close();
-            } finally {
-                graph.getModel().endUpdate();
-            }
-            mxHierarchicalLayout layout = new mxHierarchicalLayout(graph, SwingConstants.WEST);
-            layout.setIntraCellSpacing(50);
-            layout.setInterRankCellSpacing(100);
-            layout.execute(graph.getDefaultParent());
-            mxGraphComponent graphComponent = new mxGraphComponent(graph);
-            graphComponent.setConnectable(false);
-            graphComponent.setDragEnabled(false);
-            JFrame frame = new JFrame("Diagrama ER: " + dbName);
-            frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-            frame.getContentPane().add(new JScrollPane(graphComponent));
-            frame.setSize(1000, 700);
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error al generar diagrama: " + ex.getMessage());
-            ex.printStackTrace();
-        }
     }
 
     private void mostrarData(String dbName, String tableName) {
@@ -741,7 +620,232 @@ public class Login extends javax.swing.JFrame {
         }
     }
 
+    private void verDiagrama(String DBname, String tableName) {
+        try {
+            ConexionIB conexionIB = gestor.getConexion(DBname);
+            Connection con = (Connection) conexionIB.getConnection();
+
+            mxGraph graph = new mxGraph();
+            Object parent = graph.getDefaultParent();
+            graph.getModel().beginUpdate();
+
+            try {
+                Map<String, Object> tblNodos = new HashMap<>();
+                List<String> verTbl = new ArrayList<>();
+                Map<String, Boolean> esVista = new HashMap<>();
+                String sqlBase = "SELECT RDB$RELATION_NAME, RDB$VIEW_BLR FROM RDB$RELATIONS WHERE RDB$SYSTEM_FLAG=0";
+                if (tableName != null) {
+                    sqlBase += " AND RDB$RELATION_NAME='" + tableName.toUpperCase() + "'";
+                }
+                sqlBase += " ORDER BY RDB$RELATION_NAME";
+
+                Statement st = (Statement) con.createStatement();
+                ResultSet rsTbl = (ResultSet) st.executeQuery(sqlBase);
+
+                while (rsTbl.next()) {
+                    String nombreTbl = rsTbl.getString("RDB$RELATION_NAME").trim();
+                    boolean vista = rsTbl.getObject("RDB$VIEW_BLR") != null;
+                    verTbl.add(nombreTbl);
+                    esVista.put(nombreTbl, vista);
+                }
+                rsTbl.close();
+
+                if (tableName != null) {
+                    String sqlRela
+                            = "SELECT DISTINCT "
+                            + "  CASE WHEN rc.RDB$RELATION_NAME = '" + tableName.toUpperCase() + "' THEN rc2.RDB$RELATION_NAME "
+                            + "       ELSE rc.RDB$RELATION_NAME END AS TABLA_RELACIONADA "
+                            + "FROM RDB$RELATION_CONSTRAINTS rc "
+                            + "JOIN RDB$REF_CONSTRAINTS rfc ON rc.RDB$CONSTRAINT_NAME = rfc.RDB$CONSTRAINT_NAME "
+                            + "JOIN RDB$RELATION_CONSTRAINTS rc2 ON rfc.RDB$CONST_NAME_UQ = rc2.RDB$CONSTRAINT_NAME "
+                            + "WHERE (rc.RDB$RELATION_NAME = '" + tableName.toUpperCase() + "' OR rc2.RDB$RELATION_NAME = '" + tableName.toUpperCase() + "') "
+                            + "AND rc.RDB$CONSTRAINT_TYPE = 'FOREIGN KEY'";
+
+                    ResultSet rsRel = (ResultSet) st.executeQuery(sqlRela);
+                    while (rsRel.next()) {
+                        String tablaRel = rsRel.getString("TABLA_RELACIONADA");
+                        if (tablaRel != null && !tablaRel.trim().equals(tableName.toUpperCase())
+                                && !verTbl.contains(tablaRel.trim())) {
+                            verTbl.add(tablaRel.trim());
+                            esVista.put(tablaRel.trim(), false);
+                        }
+                    }
+                    rsRel.close();
+                }
+
+                int maxCols = Math.max(3, (int) Math.ceil(Math.sqrt(verTbl.size())));
+                int x = 50, y = 50, colActual = 0;
+
+                for (String nombreTabla : verTbl) {
+                    Set<String> primaryKeys = new HashSet<>();
+                    String sqlPK
+                            = "SELECT s.RDB$FIELD_NAME "
+                            + "FROM RDB$RELATION_CONSTRAINTS rc "
+                            + "JOIN RDB$INDEX_SEGMENTS s ON s.RDB$INDEX_NAME = rc.RDB$INDEX_NAME "
+                            + "WHERE rc.RDB$RELATION_NAME = '" + nombreTabla + "' AND rc.RDB$CONSTRAINT_TYPE = 'PRIMARY KEY'";
+
+                    ResultSet rsPK = (ResultSet) st.executeQuery(sqlPK);
+                    while (rsPK.next()) {
+                        primaryKeys.add(rsPK.getString("RDB$FIELD_NAME").trim());
+                    }
+                    rsPK.close();
+
+                    Set<String> foreignKeys = new HashSet<>();
+                    String sqlFK
+                            = "SELECT s.RDB$FIELD_NAME "
+                            + "FROM RDB$RELATION_CONSTRAINTS rc "
+                            + "JOIN RDB$INDEX_SEGMENTS s ON s.RDB$INDEX_NAME = rc.RDB$INDEX_NAME "
+                            + "WHERE rc.RDB$RELATION_NAME = '" + nombreTabla + "' AND rc.RDB$CONSTRAINT_TYPE = 'FOREIGN KEY'";
+
+                    ResultSet rsFK = (ResultSet) st.executeQuery(sqlFK);
+                    while (rsFK.next()) {
+                        foreignKeys.add(rsFK.getString("RDB$FIELD_NAME").trim());
+                    }
+                    rsFK.close();
+
+                    PreparedStatement psCol = (PreparedStatement) con.prepareStatement(
+                            "SELECT rf.RDB$FIELD_NAME, f.RDB$FIELD_TYPE, f.RDB$FIELD_SUB_TYPE, "
+                            + "f.RDB$FIELD_PRECISION, f.RDB$FIELD_SCALE, rf.RDB$NULL_FLAG "
+                            + "FROM RDB$RELATION_FIELDS rf "
+                            + "JOIN RDB$FIELDS f ON rf.RDB$FIELD_SOURCE = f.RDB$FIELD_NAME "
+                            + "WHERE rf.RDB$RELATION_NAME = ? ORDER BY rf.RDB$FIELD_POSITION");
+                    psCol.setString(1, nombreTabla);
+                    ResultSet rsCols = (ResultSet) psCol.executeQuery();
+
+                    StringBuilder contenido = new StringBuilder();
+                    Boolean vista = esVista.get(nombreTabla);
+                    String tipoTabla = (vista != null && vista) ? "Vista" : "Tabla";
+
+                    contenido.append(nombreTabla).append(" (").append(tipoTabla).append(")\n");
+                    contenido.append("==================\n");
+
+                    int numColumnas = 0;
+                    while (rsCols.next()) {
+                        String colNombre = rsCols.getString("RDB$FIELD_NAME").trim();
+                        int tipo = rsCols.getInt("RDB$FIELD_TYPE");
+                        int subTipo = rsCols.getInt("RDB$FIELD_SUB_TYPE");
+                        int precision = rsCols.getInt("RDB$FIELD_PRECISION");
+                        int scale = rsCols.getInt("RDB$FIELD_SCALE");
+                        boolean notNull = rsCols.getInt("RDB$NULL_FLAG") == 1;
+
+                        String tipoStr = mapTipoInterBase(tipo, subTipo, precision, scale);
+                        boolean esPK = primaryKeys.contains(colNombre);
+                        boolean esFK = foreignKeys.contains(colNombre);
+
+                        if (esPK) {
+                            contenido.append("PK-> ").append(colNombre);
+                        } else if (esFK) {
+                            contenido.append("FK-> ").append(colNombre);
+                        } else {
+                            contenido.append("     ").append(colNombre);
+                        }
+
+                        contenido.append(" : ").append(tipoStr);
+
+                        if (notNull && !esPK) {
+                            contenido.append(" NN");
+                        }
+
+                        contenido.append("\n");
+                        numColumnas++;
+                    }
+
+                    rsCols.close();
+                    psCol.close();
+
+                    int ancho = Math.max(250, Math.min(350, nombreTabla.length() * 15 + 80));
+                    int alto = Math.max(120, 60 + (numColumnas * 20) + 15);
+
+                    String estilo = "shape=rectangle;align=left;verticalAlign=top;spacingLeft=8;spacingTop=8;"
+                            + "fontSize=11;fontFamily=monospaced;fillColor=#F0F8FF;strokeColor=#4682B4;"
+                            + "strokeWidth=2;rounded=1;shadow=1;";
+
+                    Object nodo = graph.insertVertex(parent, null, contenido.toString(), x, y, ancho, alto, estilo);
+                    tblNodos.put(nombreTabla, nodo);
+
+                    colActual++;
+                    if (colActual >= maxCols) {
+                        colActual = 0;
+                        x = 50;
+                        y += alto + 70;
+                    } else {
+                        x += ancho + 90;
+                    }
+                }
+
+                String sqlRelaFK
+                        = "SELECT rc.RDB$RELATION_NAME AS TABLA_ORIGEN, "
+                        + "rc2.RDB$RELATION_NAME AS TABLA_REF, "
+                        + "s.RDB$FIELD_NAME AS CAMPO_ORIGEN, "
+                        + "s2.RDB$FIELD_NAME AS CAMPO_REF "
+                        + "FROM RDB$RELATION_CONSTRAINTS rc "
+                        + "JOIN RDB$REF_CONSTRAINTS rfc ON rc.RDB$CONSTRAINT_NAME = rfc.RDB$CONSTRAINT_NAME "
+                        + "JOIN RDB$RELATION_CONSTRAINTS rc2 ON rfc.RDB$CONST_NAME_UQ = rc2.RDB$CONSTRAINT_NAME "
+                        + "JOIN RDB$INDEX_SEGMENTS s ON s.RDB$INDEX_NAME = rc.RDB$INDEX_NAME "
+                        + "JOIN RDB$INDEX_SEGMENTS s2 ON s2.RDB$INDEX_NAME = rc2.RDB$INDEX_NAME "
+                        + "WHERE rc.RDB$CONSTRAINT_TYPE = 'FOREIGN KEY'";
+
+                ResultSet rsRelFK = (ResultSet) st.executeQuery(sqlRelaFK);
+                while (rsRelFK.next()) {
+                    String origen = rsRelFK.getString("TABLA_ORIGEN").trim();
+                    String destino = rsRelFK.getString("TABLA_REF").trim();
+                    String campoOrigen = rsRelFK.getString("CAMPO_ORIGEN").trim();
+                    String campoRef = rsRelFK.getString("CAMPO_REF").trim();
+
+                    Object nodoOrigen = tblNodos.get(origen);
+                    Object nodoDestino = tblNodos.get(destino);
+
+                    if (nodoOrigen != null && nodoDestino != null) {
+                        String etiqueta = campoOrigen.equals(campoRef) ? campoOrigen : campoOrigen + "->" + campoRef;
+
+                        graph.insertEdge(parent, null, etiqueta, nodoOrigen, nodoDestino,
+                                "strokeColor=#4682B4;strokeWidth=2;endArrow=block;endFill=1;"
+                                + "fontSize=10;fontColor=#2F4F4F;labelBackgroundColor=#FFFFFF;"
+                                + "edgeStyle=orthogonalEdgeStyle;rounded=1;");
+                    }
+                }
+                rsRelFK.close();
+                st.close();
+
+            } finally {
+                graph.getModel().endUpdate();
+            }
+
+            mxHierarchicalLayout layout = new mxHierarchicalLayout(graph, SwingConstants.WEST);
+            layout.setIntraCellSpacing(80);
+            layout.setInterRankCellSpacing(130);
+            layout.setInterHierarchySpacing(160);
+            layout.setFineTuning(true);
+            layout.execute(graph.getDefaultParent());
+
+            mxGraphComponent graphComponent = new mxGraphComponent(graph);
+            graphComponent.setConnectable(false);
+            graphComponent.setDragEnabled(true);
+            graphComponent.setPanning(true);
+            graphComponent.setKeepSelectionVisibleOnZoom(true);
+            graphComponent.setAntiAlias(true);
+            graphComponent.getViewport().setOpaque(true);
+            graphComponent.getViewport().setBackground(java.awt.Color.WHITE);
+
+            String titulo = tableName != null
+                    ? "Diagrama ER - Tabla: " + tableName + " y Relaciones"
+                    : "Diagrama ER - Base de Datos: " + DBname;
+
+            JFrame frame = new JFrame(titulo);
+            frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            frame.getContentPane().add(new JScrollPane(graphComponent));
+            frame.setSize(1300, 850);
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
+
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error al generar diagrama: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
+    }
     
+
 
     /**
      * This method is called from within the constructor to initialize the form.
