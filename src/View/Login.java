@@ -903,7 +903,7 @@ public class Login extends javax.swing.JFrame {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setBackground(new java.awt.Color(204, 204, 204));
 
-        jPanel1.setBackground(new java.awt.Color(204, 204, 204));
+        jPanel1.setBackground(new java.awt.Color(102, 204, 255));
 
         jTree1.setBackground(new java.awt.Color(255, 255, 255));
         jTree1.setFont(new java.awt.Font("Nirmala UI", 0, 12)); // NOI18N
