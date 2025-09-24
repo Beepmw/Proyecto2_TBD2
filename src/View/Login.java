@@ -492,20 +492,21 @@ public class Login extends javax.swing.JFrame {
         submenu = new JPopupMenu();
 
         if (nodo.getParent() != null && nodo.getParent().toString().equalsIgnoreCase("Bases de Datos")) {
-            //JMenuItem exportPg = new JMenuItem("Exportar a PostgreSQL");
-            // exportPg.addActionListener(e -> exportToPostgres());
             JMenuItem genDiagramDB = new JMenuItem("Generar Diagrama de Toda la Base");
-
-            
             JMenuItem sync = new JMenuItem("Sincronizar con postgres ");
 
             String databaseName = nodo.getUserObject().toString();
             genDiagramDB.addActionListener(e -> verDiagrama(databaseName, null));
-            //sync.addActionListener(e -> iniciarSincronizacionPostgres(databaseName));
+            sync.addActionListener(e -> {
+                try {
+                    sincronizarBD(databaseName);
+                } catch (SQLException ex) {
+                    Logger.getLogger(Login.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            });
 
-            //submenu.add(exportPg);
             submenu.add(genDiagramDB);
-            //submenu.add(sync);  
+            submenu.add(sync);  
         }
 
     
@@ -845,7 +846,35 @@ public class Login extends javax.swing.JFrame {
         }
     }
     
+    private void sincronizarBD(String nombreConexionInterbase) throws SQLException {
+    // Aquí puedes pedir datos de conexión a Postgres. Para el ejemplo, los pongo fijos:
+    String hostPG = "localhost";
+    String dbPG = "postgres";
+    String userPG = "postgres";
+    String passPG = "postgres";
 
+    ConexionIB interbase = gestor.getConexion(nombreConexionInterbase);
+    ConexionPG postgres = new ConexionPG();
+    if (!postgres.conectarPG(hostPG, dbPG, userPG, passPG)) {
+        JOptionPane.showMessageDialog(this, "No se pudo conectar a PostgreSQL");
+        return;
+    }
+
+    sincronizar sync = new sincronizar(interbase.getConnection(), (java.sql.Connection) postgres.getConnection());
+
+    try {
+        // Sincroniza tablas y relaciones
+        sync.syncTblRel(); // Este método debe manejar alta, baja, modificación de datos
+        // Sincroniza vistas
+        //sync.syncAllViews();
+        JOptionPane.showMessageDialog(this, "Sincronización completada para " + nombreConexionInterbase + ".");
+    } catch (Exception ex) {
+        JOptionPane.showMessageDialog(this, "Ocurrió un error: " + ex.getMessage());
+        ex.printStackTrace();
+    } finally {
+        postgres.cerrar();
+    }
+}
 
     /**
      * This method is called from within the constructor to initialize the form.
