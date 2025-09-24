@@ -32,12 +32,14 @@ import javax.swing.JPopupMenu;
 import com.mxgraph.swing.mxGraphComponent;
 import com.mxgraph.view.mxGraph;
 import com.mxgraph.layout.hierarchical.mxHierarchicalLayout;
+import java.awt.Image;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPasswordField;
@@ -69,8 +71,30 @@ public class Login extends javax.swing.JFrame {
         jTree1.setModel(null);
         cargarConexiones();
         actualizarArbol();
+        imagenes();
         setLocationRelativeTo(null);
 
+    }
+    
+    private void imagenes(){
+        ImageIcon run= new ImageIcon(getClass().getResource("/images/run.png"));
+        
+        Image runAjus = run.getImage().getScaledInstance(btnRunSql.getWidth(), btnRunSql.getHeight(), Image.SCALE_SMOOTH);
+        System.out.println(btnRunSql.getWidth());
+        System.out.println(btnRunSql.getHeight());
+        btnRunSql.setIcon(new ImageIcon(runAjus));
+        
+        ImageIcon save= new ImageIcon(getClass().getResource("/images/save.png"));
+        Image saveAjus = save.getImage().getScaledInstance(btnExportar.getWidth(), btnExportar.getHeight(), Image.SCALE_SMOOTH);
+        btnExportar.setIcon(new ImageIcon(saveAjus));
+        
+        ImageIcon crear= new ImageIcon(getClass().getResource("/images/crear.png"));
+        Image crearAjus = crear.getImage().getScaledInstance(btnCreate.getWidth(), btnCreate.getHeight(), Image.SCALE_SMOOTH);
+        btnCreate.setIcon(new ImageIcon(crearAjus));
+        
+        ImageIcon newServer= new ImageIcon(getClass().getResource("/images/new.png"));
+        Image newAjus = newServer.getImage().getScaledInstance(btn_newServer.getWidth(), btn_newServer.getHeight(), Image.SCALE_SMOOTH);
+        btn_newServer.setIcon(new ImageIcon(newAjus));
     }
 
     public void agregarConexion(String nombre, Config cfg) {
@@ -878,6 +902,8 @@ public class Login extends javax.swing.JFrame {
         postgres.cerrar();
     }
 }
+    
+    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -903,11 +929,11 @@ public class Login extends javax.swing.JFrame {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setBackground(new java.awt.Color(204, 204, 204));
 
-        jPanel1.setBackground(new java.awt.Color(102, 204, 255));
+        jPanel1.setBackground(new java.awt.Color(51, 51, 51));
 
-        jTree1.setBackground(new java.awt.Color(255, 255, 255));
+        jTree1.setBackground(new java.awt.Color(204, 204, 204));
         jTree1.setFont(new java.awt.Font("Nirmala UI", 0, 12)); // NOI18N
-        jTree1.setForeground(new java.awt.Color(0, 0, 0));
+        jTree1.setForeground(new java.awt.Color(204, 204, 204));
         jTree1.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 jTree1MouseClicked(evt);
@@ -920,34 +946,30 @@ public class Login extends javax.swing.JFrame {
 
         btn_newServer.setBackground(new java.awt.Color(255, 255, 255));
         btn_newServer.setFont(new java.awt.Font("Nirmala UI", 0, 12)); // NOI18N
-        btn_newServer.setForeground(new java.awt.Color(0, 0, 0));
-        btn_newServer.setText("Agregar base de datos");
+        btn_newServer.setForeground(new java.awt.Color(255, 255, 255));
         btn_newServer.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btn_newServerActionPerformed(evt);
             }
         });
 
-        txtQuery.setBackground(new java.awt.Color(255, 255, 255));
+        txtQuery.setBackground(new java.awt.Color(204, 204, 204));
         txtQuery.setColumns(20);
         txtQuery.setFont(new java.awt.Font("Nirmala UI", 0, 12)); // NOI18N
-        txtQuery.setForeground(new java.awt.Color(0, 0, 0));
         txtQuery.setRows(5);
         jScrollPane2.setViewportView(txtQuery);
 
         btnRunSql.setBackground(new java.awt.Color(255, 255, 255));
         btnRunSql.setFont(new java.awt.Font("Nirmala UI", 0, 12)); // NOI18N
-        btnRunSql.setForeground(new java.awt.Color(0, 0, 0));
-        btnRunSql.setText("Run");
+        btnRunSql.setForeground(new java.awt.Color(255, 255, 255));
         btnRunSql.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnRunSqlActionPerformed(evt);
             }
         });
 
-        tbl_Result.setBackground(new java.awt.Color(255, 255, 255));
+        tbl_Result.setBackground(new java.awt.Color(153, 153, 153));
         tbl_Result.setFont(new java.awt.Font("Nirmala UI", 0, 12)); // NOI18N
-        tbl_Result.setForeground(new java.awt.Color(0, 0, 0));
         tbl_Result.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null},
@@ -964,8 +986,7 @@ public class Login extends javax.swing.JFrame {
 
         btnExportar.setBackground(new java.awt.Color(255, 255, 255));
         btnExportar.setFont(new java.awt.Font("Nirmala UI", 0, 12)); // NOI18N
-        btnExportar.setForeground(new java.awt.Color(0, 0, 0));
-        btnExportar.setText("Exportar");
+        btnExportar.setForeground(new java.awt.Color(255, 255, 255));
         btnExportar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnExportarActionPerformed(evt);
@@ -974,8 +995,7 @@ public class Login extends javax.swing.JFrame {
 
         btnCreate.setBackground(new java.awt.Color(255, 255, 255));
         btnCreate.setFont(new java.awt.Font("Nirmala UI", 0, 12)); // NOI18N
-        btnCreate.setForeground(new java.awt.Color(0, 0, 0));
-        btnCreate.setText("Create");
+        btnCreate.setForeground(new java.awt.Color(255, 255, 255));
         btnCreate.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnCreateActionPerformed(evt);
@@ -988,32 +1008,33 @@ public class Login extends javax.swing.JFrame {
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
                 .addContainerGap(18, Short.MAX_VALUE)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 211, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 211, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(btn_newServer)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 537, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 537, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 537, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(btnRunSql)
+                        .addGap(26, 26, 26)
+                        .addComponent(btnExportar)
+                        .addGap(26, 26, 26)
+                        .addComponent(btnCreate)))
                 .addGap(60, 60, 60))
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGap(40, 40, 40)
-                .addComponent(btn_newServer)
-                .addGap(72, 72, 72)
-                .addComponent(btnRunSql)
-                .addGap(26, 26, 26)
-                .addComponent(btnExportar)
-                .addGap(26, 26, 26)
-                .addComponent(btnCreate)
-                .addContainerGap(294, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                .addContainerGap(49, Short.MAX_VALUE)
+                .addContainerGap(37, Short.MAX_VALUE)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(btn_newServer)
-                    .addComponent(btnRunSql)
-                    .addComponent(btnExportar)
-                    .addComponent(btnCreate))
+                    .addComponent(btnRunSql, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btnExportar, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btnCreate, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btn_newServer, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
