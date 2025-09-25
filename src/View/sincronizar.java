@@ -50,6 +50,35 @@ public class sincronizar {
 
     }
 
+    public void dropAllPgObjects() throws SQLException {
+        try (Statement stmt = PGconn.createStatement()) {
+            // Vistas primero
+            ResultSet rsViews = stmt.executeQuery(
+                    "SELECT table_name FROM information_schema.views WHERE table_schema = 'public'");
+            List<String> views = new ArrayList<>();
+            while (rsViews.next()) {
+                views.add(rsViews.getString(1));
+            }
+            rsViews.close();
+            for (String v : views) {
+                stmt.executeUpdate("DROP VIEW IF EXISTS " + v + " CASCADE");
+                System.out.println("Vista eliminada: " + v);
+            }
+
+            // Tablas después
+            ResultSet rsTables = stmt.executeQuery(
+                    "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'");
+            List<String> tables = new ArrayList<>();
+            while (rsTables.next()) {
+                tables.add(rsTables.getString(1));
+            }
+            rsTables.close();
+            for (String t : tables) {
+                stmt.executeUpdate("DROP TABLE IF EXISTS " + t + " CASCADE");
+                System.out.println("Tabla eliminada: " + t);
+            }
+        }
+    }
     public void syncTblRel() throws SQLException {
 
         Statement stTablas = IBconn.createStatement();
@@ -58,18 +87,11 @@ public class sincronizar {
                 + "WHERE RDB$SYSTEM_FLAG = 0 AND RDB$VIEW_BLR IS NULL "
                 + "ORDER BY RDB$RELATION_NAME");
 
-        while (rsTablas.next()) {
-            String tabla = rsTablas.getString(1).trim();
-            System.out.println("Sincronizando tabla: " + tabla);
-            try (Statement stmtpg = PGconn.createStatement()) {
-                stmtpg.executeUpdate("DROP TABLE IF EXISTS " + tabla + " CASCADE");
-                System.out.println("tabla eliminada " + tabla);
-            } catch (SQLException e) {
-                System.err.println("error eliminando la tabla " + tabla + e.getMessage());
-            }
-
-            syncTodo(tabla);
-        }
+         while (rsTablas.next()) {
+        String tabla = rsTablas.getString(1).trim();
+        System.out.println("Migrando tabla: " + tabla);
+        syncTodo(tabla);
+    }
         rsTablas.close();
         stTablas.close();
     }
@@ -148,108 +170,43 @@ public class sincronizar {
 
         Statement stmtpg = PGconn.createStatement();
         stmtpg.execute(ddl.toString());
-
-        if (pkFields.isEmpty()) {
-            System.out.println("Tabla " + tableName + " sin PK - Limpiando tabla completa");
-            stmtpg.execute("DELETE FROM " + tableName);
-        } else {
-            System.out.println("Tabla " + tableName + " con PK - Sincronización incremental");
-        }
-
+        System.out.println("se creo en postgres"+tableName);
+        
         Statement stData = IBconn.createStatement();
-        ResultSet rsData = stData.executeQuery("SELECT * FROM " + tableName);
-        ResultSetMetaData meta = rsData.getMetaData();
+    ResultSet rsData = stData.executeQuery("SELECT * FROM " + tableName);
+    ResultSetMetaData meta = rsData.getMetaData();
 
-        Set<String> pkValuesInterbase = new HashSet<>();
-
-        while (rsData.next()) {
-            StringBuilder sbInsert = new StringBuilder();
-            sbInsert.append("INSERT INTO ").append(tableName).append(" (")
-                    .append(String.join(", ", colNames)).append(") VALUES (");
-
-            for (int i = 1; i <= meta.getColumnCount(); i++) {
-                Object val = rsData.getObject(i);
-                if (val == null) {
-                    sbInsert.append("NULL");
-                } else {
-                    sbInsert.append("'").append(val.toString().replace("'", "''")).append("'");
-                }
-                if (i < meta.getColumnCount()) {
-                    sbInsert.append(", ");
-                }
+    while (rsData.next()) {
+        StringBuilder sbInsert = new StringBuilder();
+        sbInsert.append("INSERT INTO ").append(tableName).append(" (")
+            .append(String.join(", ", colNames)).append(") VALUES (");
+        for (int i = 1; i <= meta.getColumnCount(); i++) {
+            Object val = rsData.getObject(i);
+            if (val == null) {
+                sbInsert.append("NULL");
+            } else {
+                sbInsert.append("'").append(val.toString().replace("'", "''")).append("'");
             }
-            sbInsert.append(")");
-
-            if (!pkFields.isEmpty()) {
-                sbInsert.append(" ON CONFLICT (").append(String.join(", ", pkFields)).append(") DO UPDATE SET ");
-                for (int i = 1; i <= meta.getColumnCount(); i++) {
-                    String colName = meta.getColumnName(i);
-                    sbInsert.append(colName).append("=EXCLUDED.").append(colName);
-                    if (i < meta.getColumnCount()) {
-                        sbInsert.append(", ");
-                    }
-                }
-            }
-            sbInsert.append(";");
-
-            if (!pkFields.isEmpty()) {
-                StringBuilder pkVal = new StringBuilder();
-                for (String pk : pkFields) {
-                    pkVal.append(rsData.getString(pk)).append("|");
-                }
-                pkValuesInterbase.add(pkVal.toString());
-            }
-
-            try {
-                stmtpg.execute(sbInsert.toString());
-            } catch (SQLException ex) {
-                System.out.println("Error insertando fila: " + ex.getMessage());
+            if (i < meta.getColumnCount()) {
+                sbInsert.append(", ");
             }
         }
-        rsData.close();
-        stData.close();
+        sbInsert.append(");");
 
-        if (!pkFields.isEmpty() && !pkValuesInterbase.isEmpty()) {
-            StringBuilder sqlSelectPG = new StringBuilder();
-            sqlSelectPG.append("SELECT ").append(String.join(", ", pkFields)).append(" FROM ").append(tableName);
-            Statement stPGSelect = PGconn.createStatement();
-            ResultSet rsPG = stPGSelect.executeQuery(sqlSelectPG.toString());
-            List<String> pkValuesPostgres = new ArrayList<>();
-            while (rsPG.next()) {
-                StringBuilder pkVal = new StringBuilder();
-                for (String pk : pkFields) {
-                    pkVal.append(rsPG.getString(pk)).append("|");
-                }
-                pkValuesPostgres.add(pkVal.toString());
-            }
-            rsPG.close();
-            stPGSelect.close();
-
-            for (String pkPostgres : pkValuesPostgres) {
-                if (!pkValuesInterbase.contains(pkPostgres)) {
-                    String[] pkParts = pkPostgres.split("\\|");
-                    StringBuilder where = new StringBuilder();
-                    for (int i = 0; i < pkFields.size(); i++) {
-                        where.append(pkFields.get(i)).append("='").append(pkParts[i]).append("'");
-                        if (i < pkFields.size() - 1) {
-                            where.append(" AND ");
-                        }
-                    }
-                    String sqlDelete = "DELETE FROM " + tableName + " WHERE " + where;
-                    try {
-                        stmtpg.execute(sqlDelete);
-                    } catch (SQLException ex) {
-                        System.out.println("Error borrando fila: " + ex.getMessage());
-                    }
-                }
-            }
+        try {
+            stmtpg.execute(sbInsert.toString());
+        } catch (SQLException ex) {
+            System.out.println("Error insertando fila en " + tableName + ": " + ex.getMessage());
         }
-        stmtpg.close();
+    }
+    rsData.close();
+    stData.close();
+    stmtpg.close();
     }
 
     public void syncTVista() throws SQLException {
-        Statement stVistas = IBconn.createStatement();
-        ResultSet rsVistas = stVistas.executeQuery(
+        Statement stmtVistas = IBconn.createStatement();
+        ResultSet rsVistas = stmtVistas.executeQuery(
                 "SELECT RDB$RELATION_NAME FROM RDB$RELATIONS "
                 + "WHERE RDB$SYSTEM_FLAG = 0 AND RDB$VIEW_BLR IS NOT NULL "
                 + "ORDER BY RDB$RELATION_NAME");
@@ -260,37 +217,43 @@ public class sincronizar {
             syncView(vista);
         }
         rsVistas.close();
-        stVistas.close();
+        stmtVistas.close();
     }
 
     public void syncView(String viewName) throws SQLException {
-        String sqlDef = null;
+        String query = null;
         PreparedStatement ps = IBconn.prepareStatement(
                 "SELECT rdb$view_source FROM rdb$relations WHERE rdb$relation_name = ?");
         ps.setString(1, viewName);
         ResultSet rs = ps.executeQuery();
         if (rs.next()) {
-            sqlDef = rs.getString(1);
+            query = rs.getString(1);
         }
         rs.close();
         ps.close();
 
-        if (sqlDef != null && !sqlDef.isEmpty()) {
-            // Limpieza básica para que Postgres lo acepte
-            sqlDef = sqlDef.trim()
+        if (query != null && !query.isEmpty()) {
+            query = query.trim()
                     .replaceAll("\\s+", " "); 
 
-            String ddl = "CREATE OR REPLACE VIEW " + viewName + " AS " + sqlDef;
+            String ddl = "CREATE OR REPLACE VIEW " + viewName + " AS " + query;
 
-            Statement stPg = PGconn.createStatement();
+            Statement stmtPg = PGconn.createStatement();
             try {
-                stPg.execute(ddl);
-                System.out.println("Vista creada/migrada en Postgres: " + viewName);
+                stmtPg.execute(ddl);
+                System.out.println("vista migrada con exito: " + viewName);
             } catch (SQLException ex) {
-                System.out.println("Error migrando vista " + viewName + ": " + ex.getMessage());
+                System.out.println("error migrando la vista " + viewName + " por " + ex.getMessage());
             }
-            stPg.close();
+            stmtPg.close();
         }
     }
+    
+   public void migrateAll() throws SQLException {
+    dropAllPgObjects();   // borrar todo
+    syncTblRel();         // recrear tablas con datos
+    syncTVista();         // recrear vistas
+    System.out.println("✅ Migración completa: todo eliminado y recargado desde InterBase");
+} 
 
 }

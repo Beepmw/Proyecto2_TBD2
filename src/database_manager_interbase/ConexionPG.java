@@ -36,8 +36,9 @@ public class ConexionPG {
     
     public void cerrar(){
         try{
-            if(conn !=null){
-                conn.close();        
+            if(conn !=null && !conn.isClosed()){
+                conn.close(); 
+                conn = null;
             }                
         }catch(SQLException e){
             e.printStackTrace();

@@ -56,8 +56,7 @@ public class Postgres extends javax.swing.JFrame {
                 
                 sincronizar sync = new sincronizar(interbaseConn, (java.sql.Connection) postgres.getConnection());
                 try {
-                    sync.syncTblRel();
-                    sync.syncTVista();
+                    sync.migrateAll();
                     JOptionPane.showMessageDialog(this, "Sincronización exitosa!");
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());

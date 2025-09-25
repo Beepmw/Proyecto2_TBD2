@@ -137,10 +137,11 @@ public class Login extends javax.swing.JFrame {
                         int tipo = cols.getInt("RDB$FIELD_TYPE");
                         int subTipo = cols.getInt("RDB$FIELD_SUB_TYPE");
                         int longitud = cols.getInt("RDB$FIELD_LENGTH");
+                        int precision = cols.getInt("RDB$FIELD_PRECISION");
                         int escala = cols.getInt("RDB$FIELD_SCALE");
                         boolean nnull = cols.getInt("RDB$NULL_FLAG") == 1;
 
-                        String query = mapTipoInterBase(tipo, subTipo, longitud, escala);
+                        String query = mapTipoInterBase(tipo, subTipo, longitud, escala,precision);
                         String columnaTree = col + " " + query;
                         if (nnull) {
                             columnaTree += " NOT NULL";
@@ -353,7 +354,7 @@ public class Login extends javax.swing.JFrame {
         return gestor;
     }
 
-    public String mapTipoInterBase(int tipo, int subTipo, int precision, int scale) {
+    public String mapTipoInterBase(int tipo, int subTipo, int longitud, int scale, int precision) {
         switch (tipo) {
             case 7:
                 return "SMALLINT";
@@ -364,21 +365,25 @@ public class Login extends javax.swing.JFrame {
             case 12:
                 return "DATE";
             case 14:
-                int prec = (precision < 1) ? 255 : precision;
-                return "CHAR (" + prec + ")";
+                int len = (longitud > 0) ? longitud : 1;
+            return "CHAR(" + len + ")";
             case 16:
                 if (scale == 0) {
-                    return "BIGINT";
-                } else {
-                    return "NUMERIC(" + precision + "," + Math.abs(scale) + ")";
-                }
+                return "BIGINT";
+            } else {
+                int prec = (precision > 0) ? precision : 18;
+                return "NUMERIC(" + prec + "," + Math.abs(scale) + ")";
+            }
+           
             case 27:
                 return "DOUBLE PRECISION";
             case 35:
                 return "TIMESTAMP";
             case 37:
-                int precc = (precision < 1) ? 255 : precision;
-                return "VARCHAR(" + precc + ")";
+                
+                int leng = (longitud > 0) ? longitud : 1;
+                return "VARCHAR(" + leng + ")";
+            
             case 261:
                 if (subTipo == 1) {
                     return "BLOB SUB_TYPE TEXT";
@@ -671,9 +676,10 @@ public class Login extends javax.swing.JFrame {
             int tipo = rsCols.getInt("RDB$FIELD_TYPE");
             int subTipo = rsCols.getInt("RDB$FIELD_SUB_TYPE");
             int longi = rsCols.getInt("RDB$FIELD_LENGTH");
+            int precision = rsCols.getInt("RDB$FIELD_PRECISION");
             int scale = rsCols.getInt("RDB$FIELD_SCALE");
             boolean notNull = rsCols.getInt("RDB$NULL_FLAG") == 1;
-            ddl.append("  ").append(col).append(" ").append(mapTipoInterBase(tipo, subTipo, longi, scale));
+            ddl.append("  ").append(col).append(" ").append(mapTipoInterBase(tipo, subTipo, longi, scale,precision));
             if (notNull) {
                 ddl.append(" NOT NULL");
             }
@@ -830,10 +836,11 @@ public class Login extends javax.swing.JFrame {
                         int tipo = rsCols.getInt("RDB$FIELD_TYPE");
                         int subTipo = rsCols.getInt("RDB$FIELD_SUB_TYPE");
                         int longitud = rsCols.getInt("RDB$FIELD_LENGTH");
+                        int precision =rsCols.getInt("RDB$FIELD_LENGTH");
                         int scale = rsCols.getInt("RDB$FIELD_SCALE");
                         boolean notNull = rsCols.getInt("RDB$NULL_FLAG") == 1;
 
-                        String tipoStr = mapTipoInterBase(tipo, subTipo, longitud, scale);
+                        String tipoStr = mapTipoInterBase(tipo, subTipo, longitud, scale,precision);
                         boolean esPK = primaryKeys.contains(colNombre);
                         boolean esFK = foreignKeys.contains(colNombre);
 

@@ -10,8 +10,6 @@ package View;
  */
 import database_manager_interbase.ConexionIB;
 import interbase.interclient.Connection;
-import java.util.ArrayList;
-import java.util.List;
 import javax.swing.*;
 import javax.swing.table.*;
 
@@ -46,7 +44,6 @@ public class createTV extends javax.swing.JFrame {
         cmbTD.addItem("TIME");
         cmbTD.addItem("TIMESTAMP");
         cmbTD.addItem("BLOB");
-        cmbTD.addItem("BIGINT");
         
         
         cmbTV.setSelectedIndex(0);
@@ -103,7 +100,6 @@ public class createTV extends javax.swing.JFrame {
         if ("Table".equalsIgnoreCase(tipo)) {
             StringBuilder ddl = new StringBuilder("CREATE TABLE " + nombre + " (\n");
             Vector<Vector> data = mdlCol.getDataVector();
-            List<String> pkColm = new ArrayList<>();
             for (int i = 0; i < data.size(); i++) {
                 Vector fila = mdlCol.getDataVector().get(i);
                 String colNombre = fila.get(0).toString();
@@ -112,40 +108,21 @@ public class createTV extends javax.swing.JFrame {
                 boolean notNull = Boolean.parseBoolean(fila.get(3).toString());
                 boolean pk = Boolean.parseBoolean(fila.get(4).toString());
 
-                ddl.append("  ").append(colNombre).append(" ").append(" ");
-                switch (colTipo) {
-                    case "CHAR":
-                    case "VARCHAR":
-                        ddl.append(colTipo).append("(").append(conPres.isEmpty() ? "50" : conPres).append(")");
-                        break;
-
-                    case "DECIMAL":
-                    case "NUMERIC":
-                        ddl.append(colTipo).append("(").append(conPres.isEmpty() ? "10,2" : conPres).append(")");
-                        break;
-
-                    case "BOOLEAN":
-                        ddl.append("SMALLINT"); 
-                        break;
-
-                    case "BLOB":
-                        ddl.append("BLOB SUB_TYPE 1");
-                        break;
-
-                    default:
-                        ddl.append(colTipo); 
-                        break;
+                ddl.append("  ").append(colNombre).append(" ").append(colTipo);
+                if (!conPres.isEmpty()) {
+                if ("VARCHAR".equalsIgnoreCase(colTipo) || 
+                    "CHAR".equalsIgnoreCase(colTipo) || 
+                    "DECIMAL".equalsIgnoreCase(colTipo) || 
+                    "NUMERIC".equalsIgnoreCase(colTipo)) {
+                    ddl.append("(").append(conPres).append(")");
                 }
+            }
 
             if (notNull) ddl.append(" NOT NULL");
             if (pk) ddl.append(" PRIMARY KEY");
 
             if (i < data.size() - 1) ddl.append(",");
             ddl.append("\n");
-            }
-            
-            if (!pkColm.isEmpty()) {
-                ddl.append(", PRIMARY KEY (").append(String.join(", ", pkColm)).append(")\n");
             }
             ddl.append(");");
             tAddl.setText(ddl.toString());
