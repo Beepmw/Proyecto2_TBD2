@@ -125,8 +125,11 @@ public class Login extends javax.swing.JFrame {
                     DefaultMutableTreeNode nodoTabla = new DefaultMutableTreeNode(tabla);
 
                     PreparedStatement ps = (PreparedStatement) con.prepareStatement(
-                            "SELECT rf.RDB$FIELD_NAME,f.RDB$FIELD_TYPE, f.RDB$FIELD_SUB_TYPE,f.RDB$FIELD_LENGTH, f.RDB$FIELD_PRECISION, f.RDB$FIELD_SCALE, rf.RDB$NULL_FLAG "
-                            + "FROM RDB$RELATION_FIELDS rf JOIN RDB$FIELDS f ON rf.RDB$FIELD_SOURCE = f.RDB$FIELD_NAME WHERE rf.RDB$RELATION_NAME = ? ORDER BY rf.RDB$FIELD_POSITION");
+                            "SELECT rf.RDB$FIELD_NAME,f.RDB$FIELD_TYPE, f.RDB$FIELD_SUB_TYPE,f.RDB$FIELD_LENGTH, "
+                                    + "f.RDB$FIELD_PRECISION, f.RDB$FIELD_SCALE, rf.RDB$NULL_FLAG "
+                            + "FROM RDB$RELATION_FIELDS rf "
+                                    + "JOIN RDB$FIELDS f ON rf.RDB$FIELD_SOURCE = f.RDB$FIELD_NAME "
+                                    + "WHERE rf.RDB$RELATION_NAME = ? ORDER BY rf.RDB$FIELD_POSITION");
                     ps.setString(1, tabla);
                     ResultSet cols = (ResultSet) ps.executeQuery();
                     while (cols.next()) {
@@ -708,31 +711,32 @@ public class Login extends javax.swing.JFrame {
 
                 for (String nombreTabla : verTbl) {
                     Set<String> primaryKeys = new HashSet<>();
-                    String sqlPK
-                            = "SELECT s.RDB$FIELD_NAME "
+                    String sqlPK = "SELECT s.RDB$FIELD_NAME "
                             + "FROM RDB$RELATION_CONSTRAINTS rc "
                             + "JOIN RDB$INDEX_SEGMENTS s ON s.RDB$INDEX_NAME = rc.RDB$INDEX_NAME "
-                            + "WHERE rc.RDB$RELATION_NAME = '" + nombreTabla + "' AND rc.RDB$CONSTRAINT_TYPE = 'PRIMARY KEY'";
+                            + "WHERE rc.RDB$RELATION_NAME = '"+nombreTabla+"' AND rc.RDB$CONSTRAINT_TYPE = 'PRIMARY KEY'";
 
+                    
                     ResultSet rsPK = (ResultSet) st.executeQuery(sqlPK);
                     while (rsPK.next()) {
                         primaryKeys.add(rsPK.getString("RDB$FIELD_NAME").trim());
                     }
                     rsPK.close();
+                    
 
                     Set<String> foreignKeys = new HashSet<>();
                     String sqlFK
                             = "SELECT s.RDB$FIELD_NAME "
                             + "FROM RDB$RELATION_CONSTRAINTS rc "
                             + "JOIN RDB$INDEX_SEGMENTS s ON s.RDB$INDEX_NAME = rc.RDB$INDEX_NAME "
-                            + "WHERE rc.RDB$RELATION_NAME = '" + nombreTabla + "' AND rc.RDB$CONSTRAINT_TYPE = 'FOREIGN KEY'";
+                            + "WHERE rc.RDB$RELATION_NAME = '"+nombreTabla+"' AND rc.RDB$CONSTRAINT_TYPE = 'FOREIGN KEY'";
 
                     ResultSet rsFK = (ResultSet) st.executeQuery(sqlFK);
                     while (rsFK.next()) {
                         foreignKeys.add(rsFK.getString("RDB$FIELD_NAME").trim());
                     }
                     rsFK.close();
-
+                    
                     PreparedStatement psCol = (PreparedStatement) con.prepareStatement(
                             "SELECT rf.RDB$FIELD_NAME, f.RDB$FIELD_TYPE, f.RDB$FIELD_SUB_TYPE, "
                             + "f.RDB$FIELD_PRECISION, f.RDB$FIELD_SCALE, rf.RDB$NULL_FLAG "
@@ -874,37 +878,7 @@ public class Login extends javax.swing.JFrame {
             ex.printStackTrace();
         }
     }
-    
-    private void sincronizarBD(String nombreConexionInterbase) throws SQLException {
-    String hostPG = "localhost";
-    String dbPG = "postgres";
-    String userPG = "postgres";
-    String passPG = "postgres";
-
-    ConexionIB interbase = gestor.getConexion(nombreConexionInterbase);
-    ConexionPG postgres = new ConexionPG();
-    if (!postgres.conectarPG(hostPG, dbPG, userPG, passPG)) {
-        JOptionPane.showMessageDialog(this, "No se pudo conectar a PostgreSQL");
-        return;
-    }
-
-    sincronizar sync = new sincronizar(interbase.getConnection(), (java.sql.Connection) postgres.getConnection());
-
-    try {
-
-        sync.syncTblRel(); 
-        //sync.syncAllViews();
-        JOptionPane.showMessageDialog(this, "Sincronización completada para " + nombreConexionInterbase + ".");
-    } catch (Exception ex) {
-        JOptionPane.showMessageDialog(this, "Ocurrió un error: " + ex.getMessage());
-        ex.printStackTrace();
-    } finally {
-        postgres.cerrar();
-    }
-}
-    
-    
-
+   
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
