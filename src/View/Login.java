@@ -136,11 +136,11 @@ public class Login extends javax.swing.JFrame {
                         String col = cols.getString("RDB$FIELD_NAME").trim();
                         int tipo = cols.getInt("RDB$FIELD_TYPE");
                         int subTipo = cols.getInt("RDB$FIELD_SUB_TYPE");
-                        int precision = cols.getInt("RDB$FIELD_PRECISION");
+                        int longitud = cols.getInt("RDB$FIELD_LENGTH");
                         int escala = cols.getInt("RDB$FIELD_SCALE");
                         boolean nnull = cols.getInt("RDB$NULL_FLAG") == 1;
 
-                        String query = mapTipoInterBase(tipo, subTipo, precision, escala);
+                        String query = mapTipoInterBase(tipo, subTipo, longitud, escala);
                         String columnaTree = col + " " + query;
                         if (nnull) {
                             columnaTree += " NOT NULL";
@@ -597,10 +597,10 @@ public class Login extends javax.swing.JFrame {
             String col = rsCols.getString("RDB$FIELD_NAME").trim();
             int tipo = rsCols.getInt("RDB$FIELD_TYPE");
             int subTipo = rsCols.getInt("RDB$FIELD_SUB_TYPE");
-            int prec = rsCols.getInt("RDB$FIELD_PRECISION");
+            int longi = rsCols.getInt("RDB$FIELD_LENGTH");
             int scale = rsCols.getInt("RDB$FIELD_SCALE");
             boolean notNull = rsCols.getInt("RDB$NULL_FLAG") == 1;
-            ddl.append("  ").append(col).append(" ").append(mapTipoInterBase(tipo, subTipo, prec, scale));
+            ddl.append("  ").append(col).append(" ").append(mapTipoInterBase(tipo, subTipo, longi, scale));
             if (notNull) {
                 ddl.append(" NOT NULL");
             }
@@ -739,7 +739,7 @@ public class Login extends javax.swing.JFrame {
                     
                     PreparedStatement psCol = (PreparedStatement) con.prepareStatement(
                             "SELECT rf.RDB$FIELD_NAME, f.RDB$FIELD_TYPE, f.RDB$FIELD_SUB_TYPE, "
-                            + "f.RDB$FIELD_PRECISION, f.RDB$FIELD_SCALE, rf.RDB$NULL_FLAG "
+                            + "f.RDB$FIELD_PRECISION, f.RDB$FIELD_SCALE,f.RDB$FIELD_LENGTH, rf.RDB$NULL_FLAG "
                             + "FROM RDB$RELATION_FIELDS rf "
                             + "JOIN RDB$FIELDS f ON rf.RDB$FIELD_SOURCE = f.RDB$FIELD_NAME "
                             + "WHERE rf.RDB$RELATION_NAME = ? ORDER BY rf.RDB$FIELD_POSITION");
@@ -758,11 +758,11 @@ public class Login extends javax.swing.JFrame {
                         String colNombre = rsCols.getString("RDB$FIELD_NAME").trim();
                         int tipo = rsCols.getInt("RDB$FIELD_TYPE");
                         int subTipo = rsCols.getInt("RDB$FIELD_SUB_TYPE");
-                        int precision = rsCols.getInt("RDB$FIELD_PRECISION");
+                        int longitud = rsCols.getInt("RDB$FIELD_LENGTH");
                         int scale = rsCols.getInt("RDB$FIELD_SCALE");
                         boolean notNull = rsCols.getInt("RDB$NULL_FLAG") == 1;
 
-                        String tipoStr = mapTipoInterBase(tipo, subTipo, precision, scale);
+                        String tipoStr = mapTipoInterBase(tipo, subTipo, longitud, scale);
                         boolean esPK = primaryKeys.contains(colNombre);
                         boolean esFK = foreignKeys.contains(colNombre);
 
