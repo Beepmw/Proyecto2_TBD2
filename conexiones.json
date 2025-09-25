@@ -1,16 +1,23 @@
 [
   {
-    "ruta": "C:/Users/tomea/OneDrive/Documentos/docu.ib",
-    "pass": "masterkey",
-    "host": "localhost",
-    "nombre": "pruebaBD",
-    "user": "sysdba"
-  },
-  {
     "ruta": "C:/Users/tomea/OneDrive/Documentos/intento2.ib",
     "pass": "masterkey",
     "host": "localhost",
     "nombre": "intento2",
+    "user": "sysdba"
+  },
+  {
+    "ruta": "C:/Users/tomea/OneDrive/Documentos/docu.ib",
+    "pass": "masterkey",
+    "host": "localhost",
+    "nombre": "probandoBD",
+    "user": "sysdba"
+  },
+  {
+    "ruta": "C:/Users/tomea/OneDrive/Documentos/relaciones.ib",
+    "pass": "masterkey",
+    "host": "localhost",
+    "nombre": "rela",
     "user": "sysdba"
   }
 ]

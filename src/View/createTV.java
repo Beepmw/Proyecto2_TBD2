@@ -10,6 +10,8 @@ package View;
  */
 import database_manager_interbase.ConexionIB;
 import interbase.interclient.Connection;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.*;
 import javax.swing.table.*;
 
@@ -32,10 +34,21 @@ public class createTV extends javax.swing.JFrame {
         cmbTV.addItem("View");
         cmbTD.removeAllItems();
         cmbTD.addItem("VARCHAR");
+        cmbTD.addItem("CHAR");
         cmbTD.addItem("INTEGER");
         cmbTD.addItem("DECIMAL");
         cmbTD.addItem("DATE");
         cmbTD.addItem("BOOLEAN");
+        cmbTD.addItem("SMALLINT");
+        cmbTD.addItem("DOUBLE PRECISION");
+        cmbTD.addItem("FLOAT");
+        cmbTD.addItem("NUMERIC");
+        cmbTD.addItem("TIME");
+        cmbTD.addItem("TIMESTAMP");
+        cmbTD.addItem("BLOB");
+        cmbTD.addItem("BIGINT");
+        
+        
         cmbTV.setSelectedIndex(0);
         jLabel1.setText("Nombre de Tabla:");
 
@@ -90,6 +103,7 @@ public class createTV extends javax.swing.JFrame {
         if ("Table".equalsIgnoreCase(tipo)) {
             StringBuilder ddl = new StringBuilder("CREATE TABLE " + nombre + " (\n");
             Vector<Vector> data = mdlCol.getDataVector();
+            List<String> pkColm = new ArrayList<>();
             for (int i = 0; i < data.size(); i++) {
                 Vector fila = mdlCol.getDataVector().get(i);
                 String colNombre = fila.get(0).toString();
@@ -98,19 +112,40 @@ public class createTV extends javax.swing.JFrame {
                 boolean notNull = Boolean.parseBoolean(fila.get(3).toString());
                 boolean pk = Boolean.parseBoolean(fila.get(4).toString());
 
-                ddl.append("  ").append(colNombre).append(" ").append(colTipo);
-                if (!conPres.isEmpty() && 
-                ("VARCHAR".equalsIgnoreCase(colTipo) || 
-                 "CHAR".equalsIgnoreCase(colTipo) || 
-                 "DECIMAL".equalsIgnoreCase(colTipo))) {
-                ddl.append("(").append(conPres).append(")");
-            }
+                ddl.append("  ").append(colNombre).append(" ").append(" ");
+                switch (colTipo) {
+                    case "CHAR":
+                    case "VARCHAR":
+                        ddl.append(colTipo).append("(").append(conPres.isEmpty() ? "50" : conPres).append(")");
+                        break;
+
+                    case "DECIMAL":
+                    case "NUMERIC":
+                        ddl.append(colTipo).append("(").append(conPres.isEmpty() ? "10,2" : conPres).append(")");
+                        break;
+
+                    case "BOOLEAN":
+                        ddl.append("SMALLINT"); 
+                        break;
+
+                    case "BLOB":
+                        ddl.append("BLOB SUB_TYPE 1");
+                        break;
+
+                    default:
+                        ddl.append(colTipo); 
+                        break;
+                }
 
             if (notNull) ddl.append(" NOT NULL");
             if (pk) ddl.append(" PRIMARY KEY");
 
             if (i < data.size() - 1) ddl.append(",");
             ddl.append("\n");
+            }
+            
+            if (!pkColm.isEmpty()) {
+                ddl.append(", PRIMARY KEY (").append(String.join(", ", pkColm)).append(")\n");
             }
             ddl.append(");");
             tAddl.setText(ddl.toString());
@@ -164,7 +199,7 @@ public class createTV extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        jPanel1.setBackground(new java.awt.Color(204, 204, 204));
+        jPanel1.setBackground(new java.awt.Color(51, 51, 51));
 
         txtNombreTV.setBackground(new java.awt.Color(204, 204, 204));
         txtNombreTV.setForeground(new java.awt.Color(0, 0, 0));
@@ -183,7 +218,8 @@ public class createTV extends javax.swing.JFrame {
             }
         });
 
-        jLabel1.setForeground(new java.awt.Color(0, 0, 0));
+        jLabel1.setBackground(new java.awt.Color(51, 51, 51));
+        jLabel1.setForeground(new java.awt.Color(255, 255, 255));
 
         btnGuardarNew.setBackground(new java.awt.Color(255, 255, 255));
         btnGuardarNew.setForeground(new java.awt.Color(0, 0, 0));
@@ -194,7 +230,7 @@ public class createTV extends javax.swing.JFrame {
             }
         });
 
-        tAddl.setBackground(new java.awt.Color(255, 255, 255));
+        tAddl.setBackground(new java.awt.Color(204, 204, 204));
         tAddl.setColumns(20);
         tAddl.setRows(5);
         tAddl.setEnabled(false);
@@ -203,6 +239,7 @@ public class createTV extends javax.swing.JFrame {
         jPanel3.setBackground(new java.awt.Color(204, 204, 204));
         jPanel3.setForeground(new java.awt.Color(0, 0, 0));
 
+        tASelect.setBackground(new java.awt.Color(153, 153, 153));
         tASelect.setColumns(20);
         tASelect.setRows(5);
         jScrollPane1.setViewportView(tASelect);
@@ -225,6 +262,7 @@ public class createTV extends javax.swing.JFrame {
         );
 
         btnRegresar2.setBackground(new java.awt.Color(255, 255, 255));
+        btnRegresar2.setForeground(new java.awt.Color(0, 0, 0));
         btnRegresar2.setText("Regresar");
         btnRegresar2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -368,9 +406,9 @@ public class createTV extends javax.swing.JFrame {
                 .addComponent(txtNombreTV, javax.swing.GroupLayout.PREFERRED_SIZE, 202, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(cmbTV, javax.swing.GroupLayout.PREFERRED_SIZE, 124, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(87, 87, 87)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(btnRegresar2)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(24, 24, 24))
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -400,7 +438,7 @@ public class createTV extends javax.swing.JFrame {
                                 .addComponent(txtNombreTV, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addComponent(cmbTV, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(16, 16, 16)
+                        .addGap(22, 22, 22)
                         .addComponent(btnRegresar2)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)

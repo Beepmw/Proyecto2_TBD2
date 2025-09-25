@@ -29,8 +29,8 @@ public class Postgres extends javax.swing.JFrame {
     public Postgres(Login login, String conexionIB) {
         this.log = login;
         this.conexionIB = conexionIB;
-        setLocationRelativeTo(null);
         initComponents();
+        setLocationRelativeTo(null);
     }
     
     public void syncing (){
@@ -57,9 +57,7 @@ public class Postgres extends javax.swing.JFrame {
                 sincronizar sync = new sincronizar(interbaseConn, (java.sql.Connection) postgres.getConnection());
                 try {
                     sync.syncTblRel();
-                    
-                    //falta la parte de views aun
-                    //sync.syncViews();
+                    sync.syncTVista();
                     JOptionPane.showMessageDialog(this, "Sincronización exitosa!");
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
@@ -96,13 +94,14 @@ public class Postgres extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        jPanel1.setBackground(new java.awt.Color(102, 204, 255));
+        jPanel1.setBackground(new java.awt.Color(51, 51, 51));
+        jPanel1.setFocusCycleRoot(true);
 
         jLabel1.setFont(new java.awt.Font("SansSerif", 0, 24)); // NOI18N
-        jLabel1.setForeground(new java.awt.Color(0, 0, 0));
+        jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setText("Sincronización con Postgres");
 
-        jLabel2.setForeground(new java.awt.Color(0, 0, 0));
+        jLabel2.setForeground(new java.awt.Color(255, 255, 255));
         jLabel2.setText("Host:");
 
         txtHost.setBackground(new java.awt.Color(255, 255, 255));
@@ -113,19 +112,19 @@ public class Postgres extends javax.swing.JFrame {
             }
         });
 
-        jLabel3.setForeground(new java.awt.Color(0, 0, 0));
+        jLabel3.setForeground(new java.awt.Color(255, 255, 255));
         jLabel3.setText("Base de datos:");
 
         txtBD.setBackground(new java.awt.Color(255, 255, 255));
         txtBD.setForeground(new java.awt.Color(0, 0, 0));
 
-        jLabel4.setForeground(new java.awt.Color(0, 0, 0));
+        jLabel4.setForeground(new java.awt.Color(255, 255, 255));
         jLabel4.setText("Usuario:");
 
         txtUser.setBackground(new java.awt.Color(255, 255, 255));
         txtUser.setForeground(new java.awt.Color(0, 0, 0));
 
-        jLabel5.setForeground(new java.awt.Color(0, 0, 0));
+        jLabel5.setForeground(new java.awt.Color(255, 255, 255));
         jLabel5.setText("Contraseña:");
 
         txtContra.setBackground(new java.awt.Color(255, 255, 255));
@@ -172,14 +171,14 @@ public class Postgres extends javax.swing.JFrame {
                             .addComponent(txtUser)
                             .addComponent(txtContra, javax.swing.GroupLayout.DEFAULT_SIZE, 166, Short.MAX_VALUE))
                         .addGap(0, 0, Short.MAX_VALUE))))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(btnRegresar)
-                .addContainerGap())
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addGap(182, 182, 182)
                 .addComponent(btnSync)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(btnRegresar)
+                .addGap(17, 17, 17))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
