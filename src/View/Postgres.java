@@ -31,7 +31,45 @@ public class Postgres extends javax.swing.JFrame {
         setLocationRelativeTo(null);
         initComponents();
     }
+    
+    public void syncing (){
+        try {                                        
+                
+                String hostPG = txtHost.getText().trim();
+                String dbPG = txtBD.getText().trim();
+                String userPG = txtUser.getText().trim();
+                String passPG = new String(txtContra.getPassword());
+                ConexionIB interbase = log.getGestor().getConexion(conexionIB);
+                if (interbase == null) {
+                    JOptionPane.showMessageDialog(this, "No se encontró la conexión de Interbase.");
+                    return;
+                }
+                java.sql.Connection interbaseConn = interbase.getConnection();
+                
+                ConexionPG postgres = new ConexionPG();
+                if (!postgres.conectarPG(hostPG, dbPG, userPG, passPG)) {
+                    JOptionPane.showMessageDialog(this, "No se pudo conectar a PostgreSQL.");
+                    return;
+                }
 
+                sincronizar sync = new sincronizar(interbaseConn, (java.sql.Connection) postgres.getConnection());
+                try {
+                    sync.syncTblRel();
+                    
+                    //falta la parte de views aun
+                    //sync.syncViews();
+                    JOptionPane.showMessageDialog(this, "Sincronización completada.");
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
+                } finally {
+                    postgres.cerrar();
+                }
+                
+            } catch (SQLException ex) {
+                Logger.getLogger(Postgres.class.getName()).log(Level.SEVERE, null,ex);
+            }
+        
+    }
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -188,43 +226,8 @@ public class Postgres extends javax.swing.JFrame {
     }//GEN-LAST:event_txtHostActionPerformed
 
     private void btnSyncActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSyncActionPerformed
-        
-            try {                                        
-                
-                String hostPG = txtHost.getText().trim();
-                String dbPG = txtBD.getText().trim();
-                String userPG = txtUser.getText().trim();
-                String passPG = new String(txtContra.getPassword());
-                ConexionIB interbase = log.getGestor().getConexion(conexionIB);
-                if (interbase == null) {
-                    JOptionPane.showMessageDialog(this, "No se encontró la conexión de Interbase.");
-                    return;
-                }
-                java.sql.Connection interbaseConn = interbase.getConnection();
-                
-                ConexionPG postgres = new ConexionPG();
-                if (!postgres.conectarPG(hostPG, dbPG, userPG, passPG)) {
-                    JOptionPane.showMessageDialog(this, "No se pudo conectar a PostgreSQL.");
-                    return;
-                }
-
-                sincronizar sync = new sincronizar(interbaseConn, (java.sql.Connection) postgres.getConnection());
-                try {
-                    sync.syncTblRel();
-                    
-                    //falta la parte de views aun
-                    //sync.syncViews();
-                    JOptionPane.showMessageDialog(this, "Sincronización completada.");
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
-                } finally {
-                    postgres.cerrar();
-                }
-                
-            } catch (SQLException ex) {
-                Logger.getLogger(Postgres.class.getName()).log(Level.SEVERE, null,ex);
-            }
-        
+        syncing();
+            
     }//GEN-LAST:event_btnSyncActionPerformed
 
     private void btnRegresarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRegresarActionPerformed

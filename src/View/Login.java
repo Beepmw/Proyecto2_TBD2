@@ -75,24 +75,24 @@ public class Login extends javax.swing.JFrame {
         setLocationRelativeTo(null);
 
     }
-    
-    private void imagenes(){
-        ImageIcon run= new ImageIcon(getClass().getResource("/images/run.png"));
-        
+
+    private void imagenes() {
+        ImageIcon run = new ImageIcon(getClass().getResource("/images/run.png"));
+
         Image runAjus = run.getImage().getScaledInstance(btnRunSql.getWidth(), btnRunSql.getHeight(), Image.SCALE_SMOOTH);
         System.out.println(btnRunSql.getWidth());
         System.out.println(btnRunSql.getHeight());
         btnRunSql.setIcon(new ImageIcon(runAjus));
-        
-        ImageIcon save= new ImageIcon(getClass().getResource("/images/save.png"));
+
+        ImageIcon save = new ImageIcon(getClass().getResource("/images/save.png"));
         Image saveAjus = save.getImage().getScaledInstance(btnExportar.getWidth(), btnExportar.getHeight(), Image.SCALE_SMOOTH);
         btnExportar.setIcon(new ImageIcon(saveAjus));
-        
-        ImageIcon crear= new ImageIcon(getClass().getResource("/images/crear.png"));
+
+        ImageIcon crear = new ImageIcon(getClass().getResource("/images/crear.png"));
         Image crearAjus = crear.getImage().getScaledInstance(btnCreate.getWidth(), btnCreate.getHeight(), Image.SCALE_SMOOTH);
         btnCreate.setIcon(new ImageIcon(crearAjus));
-        
-        ImageIcon newServer= new ImageIcon(getClass().getResource("/images/new.png"));
+
+        ImageIcon newServer = new ImageIcon(getClass().getResource("/images/new.png"));
         Image newAjus = newServer.getImage().getScaledInstance(btn_newServer.getWidth(), btn_newServer.getHeight(), Image.SCALE_SMOOTH);
         btn_newServer.setIcon(new ImageIcon(newAjus));
     }
@@ -126,10 +126,10 @@ public class Login extends javax.swing.JFrame {
 
                     PreparedStatement ps = (PreparedStatement) con.prepareStatement(
                             "SELECT rf.RDB$FIELD_NAME,f.RDB$FIELD_TYPE, f.RDB$FIELD_SUB_TYPE,f.RDB$FIELD_LENGTH, "
-                                    + "f.RDB$FIELD_PRECISION, f.RDB$FIELD_SCALE, rf.RDB$NULL_FLAG "
+                            + "f.RDB$FIELD_PRECISION, f.RDB$FIELD_SCALE, rf.RDB$NULL_FLAG "
                             + "FROM RDB$RELATION_FIELDS rf "
-                                    + "JOIN RDB$FIELDS f ON rf.RDB$FIELD_SOURCE = f.RDB$FIELD_NAME "
-                                    + "WHERE rf.RDB$RELATION_NAME = ? ORDER BY rf.RDB$FIELD_POSITION");
+                            + "JOIN RDB$FIELDS f ON rf.RDB$FIELD_SOURCE = f.RDB$FIELD_NAME "
+                            + "WHERE rf.RDB$RELATION_NAME = ? ORDER BY rf.RDB$FIELD_POSITION");
                     ps.setString(1, tabla);
                     ResultSet cols = (ResultSet) ps.executeQuery();
                     while (cols.next()) {
@@ -344,9 +344,9 @@ public class Login extends javax.swing.JFrame {
         }
 
         jTree1.setModel(new DefaultTreeModel(root));
-        /*for (int i = 0; i < jTree1.getRowCount(); i++) {
+        for (int i = 0; i < jTree1.getRowCount(); i++) {
         jTree1.expandRow(i);
-    }*/
+    }
     }
 
     public ConexionMng getGestor() {
@@ -364,7 +364,7 @@ public class Login extends javax.swing.JFrame {
             case 12:
                 return "DATE";
             case 14:
-                int prec = (precision <1) ? 255:precision;
+                int prec = (precision < 1) ? 255 : precision;
                 return "CHAR (" + prec + ")";
             case 16:
                 if (scale == 0) {
@@ -377,7 +377,7 @@ public class Login extends javax.swing.JFrame {
             case 35:
                 return "TIMESTAMP";
             case 37:
-                int precc = (precision <1) ? 255:precision;
+                int precc = (precision < 1) ? 255 : precision;
                 return "VARCHAR(" + precc + ")";
             case 261:
                 if (subTipo == 1) {
@@ -421,7 +421,7 @@ public class Login extends javax.swing.JFrame {
     private void ejecutarSQL() throws SQLException {
         TreePath path = jTree1.getSelectionPath();
         if (path == null || path.getPathCount() < 2) {
-            JOptionPane.showMessageDialog(this, "Selecciona una conexioooon en el arbol");
+            JOptionPane.showMessageDialog(this, "Selecciona una conexion en el arbol");
             return;
         }
 
@@ -443,18 +443,24 @@ public class Login extends javax.swing.JFrame {
         gestor.setConexion(nombreConexion, conexionNueva);
         conexion = conexionNueva;
         Connection con = (Connection) conexion.getConnection();
-        String sql = txtQuery.getText().trim();
+        String sql = txtQuery.getSelectedText();
+        if (sql == null || sql.trim().isEmpty()) {
+            sql = txtQuery.getText().trim();
+        }
         System.out.println("SQL ejecutado: " + sql);
 
         if (sql.isEmpty()) {
             return;
         }
 
-        try (Statement stmt = (Statement) con.createStatement()) {
+        Statement stmt = null;
+        ResultSet rs = null;
+        try {
+            stmt = (Statement) con.createStatement();
             String sqlUpper = sql.trim().toUpperCase();
 
             if (sqlUpper.startsWith("SELECT")) {
-                ResultSet rs = (ResultSet) stmt.executeQuery(sql);
+                 rs = (ResultSet) stmt.executeQuery(sql);
                 ResultSetMetaData meta = (ResultSetMetaData) rs.getMetaData();
                 modelTable.setColumnCount(0);
                 modelTable.setRowCount(0);
@@ -473,8 +479,7 @@ public class Login extends javax.swing.JFrame {
                 rs.close();
 
             } else if (sql.toLowerCase().startsWith("create")
-                    || sql.toLowerCase().startsWith("alter")
-                    || sql.toLowerCase().startsWith("drop")) {
+                    || sql.toLowerCase().startsWith("alter")) {
 
                 if (!sql.trim().endsWith(";")) {
                     sql = sql + ";";
@@ -483,6 +488,16 @@ public class Login extends javax.swing.JFrame {
                 stmt.executeUpdate(sql);
                 JOptionPane.showMessageDialog(this, "Comando ejecutado correctamente.");
                 actualizarArbol();
+            } else if (sql.toLowerCase().startsWith("drop")) {
+                if (!sql.trim().endsWith(";")) {
+                    sql += ";";
+                }
+                stmt.executeUpdate(sql);
+                JOptionPane.showMessageDialog(this, "Tabla eliminada correctamente.");
+                actualizarArbol();
+
+                Postgres pg = new Postgres(this, nombreConexion);
+                pg.syncing();
             } else {
                 int afectados = stmt.executeUpdate(sql);
 
@@ -496,7 +511,23 @@ public class Login extends javax.swing.JFrame {
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
             ex.printStackTrace();
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            try {
+                if (stmt != null) {
+                    stmt.close();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
+
     }
 
     private void exportar() {
@@ -522,36 +553,46 @@ public class Login extends javax.swing.JFrame {
         submenu = new JPopupMenu();
 
         if (nodo.getParent() != null && nodo.getParent().toString().equalsIgnoreCase("Bases de Datos")) {
-            JMenuItem genDiagramDB = new JMenuItem("Generar Diagrama de Toda la Base");
+            JMenuItem genDiagramDB = new JMenuItem("Ver Diagrama");
             JMenuItem sync = new JMenuItem("Sincronizar con postgres ");
+            JMenuItem desconectar = new JMenuItem ("Desconectar base de datos");
             String databaseName = nodo.getUserObject().toString();
-     
+
             genDiagramDB.addActionListener(e -> verDiagrama(databaseName, null));
-            
+
             sync.addActionListener(e -> {
-                
-                    Postgres pg = new Postgres(this,databaseName);
-                    //sincronizarBD(databaseName);
-                    pg.setVisible(true);
-                
-                
+
+                Postgres pg = new Postgres(this, databaseName);
+                //sincronizarBD(databaseName);
+                pg.setVisible(true);
+
+            });
+            
+            desconectar.addActionListener(e ->{
+            try {
+                ConexionIB conexion = gestor.getConexion(databaseName);
+                if (conexion != null) {
+                    conexion.cerrar();
+                    gestor.cerrarConexion(databaseName);
+                    actualizarJSON(databaseName, false);
+                    actualizarArbol();
+                    JOptionPane.showMessageDialog(this, "Se desconectó la BD: " + databaseName);
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error al desconectar: " + ex.getMessage());
+            }
             });
 
             submenu.add(genDiagramDB);
-            submenu.add(sync);  
-        }
-
-    
-
-    else if (nodo.getUserObject () .toString().equalsIgnoreCase("Tablas") || nodo.getUserObject().toString().equalsIgnoreCase("Vistas")
-        
-            ) {
+            submenu.add(sync);
+            submenu.add(desconectar);
+        } else if (nodo.getUserObject().toString().equalsIgnoreCase("Tablas") || nodo.getUserObject().toString().equalsIgnoreCase("Vistas")) {
             JMenuItem genDiagramAllTables = new JMenuItem("Ver Diagrama");
             String databaseName = ((DefaultMutableTreeNode) nodo.getParent()).getUserObject().toString();
             genDiagramAllTables.addActionListener(e -> verDiagrama(databaseName, null));
             submenu.add(genDiagramAllTables);
 
-        }else if (nodo.getParent() != null
+        } else if (nodo.getParent() != null
                 && (nodo.getParent().toString().equalsIgnoreCase("Tablas") || nodo.getParent().toString().equalsIgnoreCase("Vistas"))) {
 
             String tableName = nodo.getUserObject().toString();
@@ -578,6 +619,32 @@ public class Login extends javax.swing.JFrame {
             submenu.add(viewData);
         }
         submenu.show(jTree1, x, y);
+    }
+
+    private void actualizarJSON(String nombre, boolean agregar) {
+        File file = new File("conexiones.json");
+        JSONArray jsonA = new JSONArray();
+        if (file.exists()) {
+            try {
+                String contenido = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+                jsonA = new JSONArray(contenido);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        if (!agregar) {
+            for (int i = 0; i < jsonA.length(); i++) {
+                if (jsonA.getJSONObject(i).getString("nombre").equals(nombre)) {
+                    jsonA.remove(i);
+                    break;
+                }
+            }
+        }
+        try (FileWriter fw = new FileWriter(file)) {
+            fw.write(jsonA.toString(2));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private String mostrarDDL(String tableName) throws SQLException {
@@ -714,29 +781,27 @@ public class Login extends javax.swing.JFrame {
                     String sqlPK = "SELECT s.RDB$FIELD_NAME "
                             + "FROM RDB$RELATION_CONSTRAINTS rc "
                             + "JOIN RDB$INDEX_SEGMENTS s ON s.RDB$INDEX_NAME = rc.RDB$INDEX_NAME "
-                            + "WHERE rc.RDB$RELATION_NAME = '"+nombreTabla+"' AND rc.RDB$CONSTRAINT_TYPE = 'PRIMARY KEY'";
+                            + "WHERE rc.RDB$RELATION_NAME = '" + nombreTabla + "' AND rc.RDB$CONSTRAINT_TYPE = 'PRIMARY KEY'";
 
-                    
                     ResultSet rsPK = (ResultSet) st.executeQuery(sqlPK);
                     while (rsPK.next()) {
                         primaryKeys.add(rsPK.getString("RDB$FIELD_NAME").trim());
                     }
                     rsPK.close();
-                    
 
                     Set<String> foreignKeys = new HashSet<>();
                     String sqlFK
                             = "SELECT s.RDB$FIELD_NAME "
                             + "FROM RDB$RELATION_CONSTRAINTS rc "
                             + "JOIN RDB$INDEX_SEGMENTS s ON s.RDB$INDEX_NAME = rc.RDB$INDEX_NAME "
-                            + "WHERE rc.RDB$RELATION_NAME = '"+nombreTabla+"' AND rc.RDB$CONSTRAINT_TYPE = 'FOREIGN KEY'";
+                            + "WHERE rc.RDB$RELATION_NAME = '" + nombreTabla + "' AND rc.RDB$CONSTRAINT_TYPE = 'FOREIGN KEY'";
 
                     ResultSet rsFK = (ResultSet) st.executeQuery(sqlFK);
                     while (rsFK.next()) {
                         foreignKeys.add(rsFK.getString("RDB$FIELD_NAME").trim());
                     }
                     rsFK.close();
-                    
+
                     PreparedStatement psCol = (PreparedStatement) con.prepareStatement(
                             "SELECT rf.RDB$FIELD_NAME, f.RDB$FIELD_TYPE, f.RDB$FIELD_SUB_TYPE, "
                             + "f.RDB$FIELD_PRECISION, f.RDB$FIELD_SCALE,f.RDB$FIELD_LENGTH, rf.RDB$NULL_FLAG "
@@ -878,7 +943,7 @@ public class Login extends javax.swing.JFrame {
             ex.printStackTrace();
         }
     }
-   
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -901,6 +966,7 @@ public class Login extends javax.swing.JFrame {
         btnExportar = new javax.swing.JButton();
         btnCreate = new javax.swing.JButton();
         jLabel1 = new javax.swing.JLabel();
+        btn_desconectar = new javax.swing.JButton();
 
         jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
 
@@ -988,18 +1054,29 @@ public class Login extends javax.swing.JFrame {
         jLabel1.setHorizontalTextPosition(javax.swing.SwingConstants.RIGHT);
         jLabel1.setOpaque(true);
 
+        btn_desconectar.setBackground(new java.awt.Color(255, 255, 255));
+        btn_desconectar.setFont(new java.awt.Font("Nirmala UI", 0, 12)); // NOI18N
+        btn_desconectar.setForeground(new java.awt.Color(255, 255, 255));
+        btn_desconectar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_desconectarActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
                 .addContainerGap(18, Short.MAX_VALUE)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
                         .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 211, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(18, 18, 18))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(btn_newServer)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(btn_desconectar)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 537, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1023,7 +1100,8 @@ public class Login extends javax.swing.JFrame {
                     .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                         .addComponent(btnRunSql, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addComponent(btnExportar, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(btnCreate, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(btnCreate, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(btn_desconectar, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
@@ -1087,6 +1165,10 @@ public class Login extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jTree1MousePressed
 
+    private void btn_desconectarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_desconectarActionPerformed
+
+    }//GEN-LAST:event_btn_desconectarActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -1126,6 +1208,7 @@ public class Login extends javax.swing.JFrame {
     private javax.swing.JButton btnCreate;
     private javax.swing.JButton btnExportar;
     private javax.swing.JButton btnRunSql;
+    private javax.swing.JButton btn_desconectar;
     private javax.swing.JButton btn_newServer;
     private javax.swing.JComboBox<String> jComboBox1;
     private javax.swing.JLabel jLabel1;
