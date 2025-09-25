@@ -10,6 +10,7 @@ package View;
  */
 import database_manager_interbase.ConexionIB;
 import interbase.interclient.Connection;
+import interbase.interclient.ResultSet;
 import javax.swing.*;
 import javax.swing.table.*;
 
@@ -44,16 +45,14 @@ public class createTV extends javax.swing.JFrame {
         cmbTD.addItem("TIME");
         cmbTD.addItem("TIMESTAMP");
         cmbTD.addItem("BLOB");
-        
-        
         cmbTV.setSelectedIndex(0);
         jLabel1.setText("Nombre de Tabla:");
 
         mdlCol = new DefaultTableModel(
-                new Object[]{"Nombre", "Tipo de Dato", "Longitud", "NOT NULL", "PK"}, 0
-        );
+                new Object[]{"Nombre", "Tipo de Dato", "Longitud", "NOT NULL", "PK"}, 0);
 
-        tblTV = new JTable(mdlCol);
+        tblTV.setModel(mdlCol);
+        tblTV.setEnabled(true);
         TableColumn colTipo = tblTV.getColumnModel().getColumn(1);
         colTipo.setCellEditor(new DefaultCellEditor(cmbTD));
         tASelect.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
@@ -82,6 +81,9 @@ public class createTV extends javax.swing.JFrame {
                 actualizarDDL();
             }
         });
+        jLabel1.setText("Nombre de la tabla:");
+        jPanel2.setVisible(true);
+        jPanel3.setVisible(false);
 
     }
 
@@ -134,6 +136,44 @@ public class createTV extends javax.swing.JFrame {
             } else {
                 tAddl.setText("CREATE VIEW " + nombre + " AS\n" + sqlSelect + ";");
             }
+        }
+    }
+    
+    private void mostrarColumnasTabla(String tableName, Connection con) {
+        try {
+            java.sql.DatabaseMetaData meta = con.getMetaData();
+            ResultSet rsCols = (ResultSet) meta.getColumns(null, null, tableName.toUpperCase(), null);
+
+            mdlCol.setRowCount(0);
+
+            while (rsCols.next()) {
+                String colName = rsCols.getString("COLUMN_NAME");
+                String colType = rsCols.getString("TYPE_NAME");
+                int size = rsCols.getInt("COLUMN_SIZE");
+                boolean notNull = "NO".equals(rsCols.getString("IS_NULLABLE"));
+                boolean pk = false; 
+
+                mdlCol.addRow(new Object[]{colName, colType, size, notNull, pk});
+            }
+
+            ResultSet rsPK = (ResultSet) meta.getPrimaryKeys(null, null, tableName.toUpperCase());
+            while (rsPK.next()) {
+                String pkCol = rsPK.getString("COLUMN_NAME");
+                for (int i = 0; i < mdlCol.getRowCount(); i++) {
+                    if (mdlCol.getValueAt(i, 0).equals(pkCol)) {
+                        mdlCol.setValueAt(true, i, 4); 
+                        break;
+                    }
+                }
+            }
+
+            tblTV.setModel(mdlCol);
+            tblTV.repaint();
+            tblTV.setEnabled(true);
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error al mostrar tabla: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
     }
 
@@ -494,27 +534,33 @@ public class createTV extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Error", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-
+        
         try {
             
             if (conexion.getConnection() == null || conexion.getConnection().isClosed()) {
                 conexion.estaAbierta();
             }
-            Connection con = (Connection) conexion.getConnection();
-            try (java.sql.Statement st = con.createStatement()) {
+
+            try (java.sql.Statement st = conexion.getConnection().createStatement()) {
                 st.executeUpdate(ddl); 
                 JOptionPane.showMessageDialog(this, "Creacion exitosa", "Exito", JOptionPane.INFORMATION_MESSAGE);
             }
-
             log.actualizarArbol();
+            if ("Table".equalsIgnoreCase(cmbTV.getSelectedItem().toString())) {
+                conexion.estaAbierta();
+                Connection con= (Connection) conexion.getConnection();
+                mostrarColumnasTabla(txtNombreTV.getText().trim(), con); 
+            
+            }
+            
 
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error en el create: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             ex.printStackTrace();
-        }
+        }finally{
         tAddl.setText("");
     }//GEN-LAST:event_btnGuardarNewActionPerformed
-
+    }
     private void cmbTVMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_cmbTVMouseClicked
 
     }//GEN-LAST:event_cmbTVMouseClicked
