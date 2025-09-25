@@ -51,13 +51,23 @@ public class sincronizar {
     }
     
     public void syncTblRel() throws SQLException {
+        
         Statement stTablas = IBconn.createStatement();
         ResultSet rsTablas = stTablas.executeQuery(
-                "SELECT RDB$RELATION_NAME FROM RDB$RELATIONS WHERE RDB$SYSTEM_FLAG = 0 AND RDB$VIEW_BLR IS NULL ORDER BY RDB$RELATION_NAME");
+                "SELECT RDB$RELATION_NAME FROM RDB$RELATIONS "
+                        + "WHERE RDB$SYSTEM_FLAG = 0 AND RDB$VIEW_BLR IS NULL "
+                        + "ORDER BY RDB$RELATION_NAME");
 
         while (rsTablas.next()) {
             String tabla = rsTablas.getString(1).trim();
             System.out.println("Sincronizando tabla: " + tabla);
+            try(Statement stmtpg =PGconn.createStatement()){
+                stmtpg.executeUpdate("DROP TABLE IF EXISTS " +tabla+ " CASCADE");
+                System.out.println("tabla eliminada "+tabla);
+            }catch(SQLException e){
+                System.err.println("error eliminando la tabla "+tabla+ e.getMessage());
+            }
+                    
             syncTodo(tabla);
         }
         rsTablas.close();
@@ -93,7 +103,7 @@ public void syncTodo(String tableName) throws SQLException {
 
     if (colNames.size() == 0) return;
 
-// Hallar PK
+// hallo PK
     List<String> pkFields = new ArrayList<>();
     Statement stPK = IBconn.createStatement();
     ResultSet rsPK = stPK.executeQuery(
@@ -110,9 +120,9 @@ public void syncTodo(String tableName) throws SQLException {
         ddl.append("PRIMARY KEY (").append(String.join(",", pkFields)).append("), ");
     }
 
-// Hallar FK
-    Statement stFK = IBconn.createStatement();
-    ResultSet rsFK = stFK.executeQuery(
+//hallo FK
+    Statement stmtfk = IBconn.createStatement();
+    ResultSet rsFK = stmtfk.executeQuery(
         "SELECT rc.RDB$CONSTRAINT_NAME, s.RDB$FIELD_NAME, ref.RDB$RELATION_NAME as ref_table, seg.RDB$FIELD_NAME as ref_field " +
         "FROM RDB$RELATION_CONSTRAINTS rc " +
         "JOIN RDB$INDEX_SEGMENTS s ON s.RDB$INDEX_NAME = rc.RDB$INDEX_NAME " +
@@ -129,16 +139,16 @@ public void syncTodo(String tableName) throws SQLException {
             .append(") REFERENCES ").append(refTable).append("(").append(refField).append("), ");
     }
     rsFK.close();
-    stFK.close();
+    stmtfk.close();
     ddl.setLength(ddl.length() - 2);
     ddl.append(");");
 
-    Statement stPg = PGconn.createStatement();
-    stPg.execute(ddl.toString());
+    Statement stmtpg = PGconn.createStatement();
+    stmtpg.execute(ddl.toString());
     
     if (pkFields.isEmpty()) {
         System.out.println("Tabla " + tableName + " sin PK - Limpiando tabla completa");
-        stPg.execute("DELETE FROM " + tableName);
+        stmtpg.execute("DELETE FROM " + tableName);
     } else {
         System.out.println("Tabla " + tableName + " con PK - Sincronización incremental");
     }
@@ -181,7 +191,7 @@ public void syncTodo(String tableName) throws SQLException {
         }
 
         try {
-            stPg.execute(sbInsert.toString());
+            stmtpg.execute(sbInsert.toString());
         } catch (SQLException ex) {
             System.out.println("Error insertando fila: " + ex.getMessage());
         }
@@ -215,14 +225,14 @@ public void syncTodo(String tableName) throws SQLException {
                 }
                 String sqlDelete = "DELETE FROM " + tableName + " WHERE " + where;
                 try {
-                    stPg.execute(sqlDelete);
+                    stmtpg.execute(sqlDelete);
                 } catch (SQLException ex) {
                     System.out.println("Error borrando fila: " + ex.getMessage());
                 }
             }
         }
     }
-    stPg.close();
+    stmtpg.close();
 }
 
    

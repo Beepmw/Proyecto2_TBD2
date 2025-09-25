@@ -7,6 +7,7 @@ package View;
 import database_manager_interbase.ConexionIB;
 import database_manager_interbase.ConexionPG;
 import interbase.interclient.Connection;
+import interbase.interclient.Statement;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,24 +42,25 @@ public class Postgres extends javax.swing.JFrame {
                 String passPG = new String(txtContra.getPassword());
                 ConexionIB interbase = log.getGestor().getConexion(conexionIB);
                 if (interbase == null) {
-                    JOptionPane.showMessageDialog(this, "No se encontró la conexión de Interbase.");
+                    JOptionPane.showMessageDialog(this, "No se encontro la conexion de Interbase.");
                     return;
                 }
                 java.sql.Connection interbaseConn = interbase.getConnection();
                 
+              
                 ConexionPG postgres = new ConexionPG();
                 if (!postgres.conectarPG(hostPG, dbPG, userPG, passPG)) {
-                    JOptionPane.showMessageDialog(this, "No se pudo conectar a PostgreSQL.");
+                    JOptionPane.showMessageDialog(this, "No se pudo conectar a Postgres");
                     return;
                 }
-
+                
                 sincronizar sync = new sincronizar(interbaseConn, (java.sql.Connection) postgres.getConnection());
                 try {
                     sync.syncTblRel();
                     
                     //falta la parte de views aun
                     //sync.syncViews();
-                    JOptionPane.showMessageDialog(this, "Sincronización completada.");
+                    JOptionPane.showMessageDialog(this, "Sincronización exitosa!");
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
                 } finally {

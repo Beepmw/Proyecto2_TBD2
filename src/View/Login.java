@@ -345,8 +345,8 @@ public class Login extends javax.swing.JFrame {
 
         jTree1.setModel(new DefaultTreeModel(root));
         for (int i = 0; i < jTree1.getRowCount(); i++) {
-        jTree1.expandRow(i);
-    }
+            jTree1.expandRow(i);
+        }
     }
 
     public ConexionMng getGestor() {
@@ -460,7 +460,7 @@ public class Login extends javax.swing.JFrame {
             String sqlUpper = sql.trim().toUpperCase();
 
             if (sqlUpper.startsWith("SELECT")) {
-                 rs = (ResultSet) stmt.executeQuery(sql);
+                rs = (ResultSet) stmt.executeQuery(sql);
                 ResultSetMetaData meta = (ResultSetMetaData) rs.getMetaData();
                 modelTable.setColumnCount(0);
                 modelTable.setRowCount(0);
@@ -479,25 +479,31 @@ public class Login extends javax.swing.JFrame {
                 rs.close();
 
             } else if (sql.toLowerCase().startsWith("create")
-                    || sql.toLowerCase().startsWith("alter")) {
+                    || sql.toLowerCase().startsWith("alter")
+                    || sql.toLowerCase().startsWith("drop")) {
 
                 if (!sql.trim().endsWith(";")) {
                     sql = sql + ";";
                 }
 
-                stmt.executeUpdate(sql);
-                JOptionPane.showMessageDialog(this, "Comando ejecutado correctamente.");
-                actualizarArbol();
-            } else if (sql.toLowerCase().startsWith("drop")) {
-                if (!sql.trim().endsWith(";")) {
-                    sql += ";";
+                if (rs != null && !rs.isClosed()) {
+                    rs.close();
+                    rs = null;
                 }
-                stmt.executeUpdate(sql);
-                JOptionPane.showMessageDialog(this, "Tabla eliminada correctamente.");
-                actualizarArbol();
+                if (stmt != null && !stmt.isClosed()) {
+                    stmt.close();
+                    stmt = null;
+                }
 
-                Postgres pg = new Postgres(this, nombreConexion);
-                pg.syncing();
+                try (Statement stmtDrop = (Statement) con.createStatement()) {
+                    stmtDrop.executeUpdate(sql);
+                    if (!con.getAutoCommit()) {
+                        con.commit();
+                    }
+                    JOptionPane.showMessageDialog(this, "Comando ejecutado correctamente.");
+                    actualizarArbol();
+                }
+
             } else {
                 int afectados = stmt.executeUpdate(sql);
 
@@ -555,7 +561,7 @@ public class Login extends javax.swing.JFrame {
         if (nodo.getParent() != null && nodo.getParent().toString().equalsIgnoreCase("Bases de Datos")) {
             JMenuItem genDiagramDB = new JMenuItem("Ver Diagrama");
             JMenuItem sync = new JMenuItem("Sincronizar con postgres ");
-            JMenuItem desconectar = new JMenuItem ("Desconectar base de datos");
+            JMenuItem desconectar = new JMenuItem("Desconectar base de datos");
             String databaseName = nodo.getUserObject().toString();
 
             genDiagramDB.addActionListener(e -> verDiagrama(databaseName, null));
@@ -567,20 +573,20 @@ public class Login extends javax.swing.JFrame {
                 pg.setVisible(true);
 
             });
-            
-            desconectar.addActionListener(e ->{
-            try {
-                ConexionIB conexion = gestor.getConexion(databaseName);
-                if (conexion != null) {
-                    conexion.cerrar();
-                    gestor.cerrarConexion(databaseName);
-                    actualizarJSON(databaseName, false);
-                    actualizarArbol();
-                    JOptionPane.showMessageDialog(this, "Se desconectó la BD: " + databaseName);
+
+            desconectar.addActionListener(e -> {
+                try {
+                    ConexionIB conexion = gestor.getConexion(databaseName);
+                    if (conexion != null) {
+                        conexion.cerrar();
+                        gestor.cerrarConexion(databaseName);
+                        actualizarJSON(databaseName, false);
+                        actualizarArbol();
+                        JOptionPane.showMessageDialog(this, "Se desconectó la BD: " + databaseName);
+                    }
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Error al desconectar: " + ex.getMessage());
                 }
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Error al desconectar: " + ex.getMessage());
-            }
             });
 
             submenu.add(genDiagramDB);
@@ -966,7 +972,6 @@ public class Login extends javax.swing.JFrame {
         btnExportar = new javax.swing.JButton();
         btnCreate = new javax.swing.JButton();
         jLabel1 = new javax.swing.JLabel();
-        btn_desconectar = new javax.swing.JButton();
 
         jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
 
@@ -1054,15 +1059,6 @@ public class Login extends javax.swing.JFrame {
         jLabel1.setHorizontalTextPosition(javax.swing.SwingConstants.RIGHT);
         jLabel1.setOpaque(true);
 
-        btn_desconectar.setBackground(new java.awt.Color(255, 255, 255));
-        btn_desconectar.setFont(new java.awt.Font("Nirmala UI", 0, 12)); // NOI18N
-        btn_desconectar.setForeground(new java.awt.Color(255, 255, 255));
-        btn_desconectar.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btn_desconectarActionPerformed(evt);
-            }
-        });
-
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -1075,8 +1071,6 @@ public class Login extends javax.swing.JFrame {
                         .addGap(18, 18, 18))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(btn_newServer)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(btn_desconectar)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 537, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1100,8 +1094,7 @@ public class Login extends javax.swing.JFrame {
                     .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                         .addComponent(btnRunSql, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addComponent(btnExportar, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(btnCreate, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(btn_desconectar, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(btnCreate, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
@@ -1165,10 +1158,6 @@ public class Login extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jTree1MousePressed
 
-    private void btn_desconectarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_desconectarActionPerformed
-
-    }//GEN-LAST:event_btn_desconectarActionPerformed
-
     /**
      * @param args the command line arguments
      */
@@ -1208,7 +1197,6 @@ public class Login extends javax.swing.JFrame {
     private javax.swing.JButton btnCreate;
     private javax.swing.JButton btnExportar;
     private javax.swing.JButton btnRunSql;
-    private javax.swing.JButton btn_desconectar;
     private javax.swing.JButton btn_newServer;
     private javax.swing.JComboBox<String> jComboBox1;
     private javax.swing.JLabel jLabel1;
