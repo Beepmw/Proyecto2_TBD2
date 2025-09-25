@@ -50,9 +50,8 @@ public class sincronizar {
 
     }
 
-    public void dropAllPgObjects() throws SQLException {
+    public void dropEnPG() throws SQLException {
         try (Statement stmt = PGconn.createStatement()) {
-            // Vistas primero
             ResultSet rsViews = stmt.executeQuery(
                     "SELECT table_name FROM information_schema.views WHERE table_schema = 'public'");
             List<String> views = new ArrayList<>();
@@ -65,7 +64,6 @@ public class sincronizar {
                 System.out.println("Vista eliminada: " + v);
             }
 
-            // Tablas después
             ResultSet rsTables = stmt.executeQuery(
                     "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'");
             List<String> tables = new ArrayList<>();
@@ -250,10 +248,10 @@ public class sincronizar {
     }
     
    public void migrateAll() throws SQLException {
-    dropAllPgObjects();   // borrar todo
-    syncTblRel();         // recrear tablas con datos
-    syncTVista();         // recrear vistas
-    System.out.println("✅ Migración completa: todo eliminado y recargado desde InterBase");
+    dropEnPG();   
+    syncTblRel();         
+    syncTVista();         
+    System.out.println("migracion completa");
 } 
 
 }
